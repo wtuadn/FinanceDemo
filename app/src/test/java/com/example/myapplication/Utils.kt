@@ -12,8 +12,9 @@ object Utils {
     fun calculateMACross(
         shortMADataList: List<MAData>,
         longMADataList: List<MAData>,
-        upCrossMADiffRate: Double = 0.0,
-        downCrossMADiffRate: Double = 0.0
+        upCrossMADiffRate: Double = 0.000,
+        downCrossMADiffRate: Double = 0.000,
+        logPerCross: Boolean = true,
     ): Triple<Double, Double, String> {
         val sb = StringBuilder()
 
@@ -56,7 +57,7 @@ object Utils {
             if (
                 (yesterday.shortMAValue <= yesterday.longMAValue && todayMADiffRate > upCrossMADiffRate) //上穿时超过阈值
                 || (yesterday.shortMAValue > yesterday.longMAValue && todayMADiffRate > upCrossMADiffRate) //上穿后某天超过阈值
-                // || (today.shortMAValue > today.longMAValue && yesterday.shortMAValue > yesterday.longMAValue && yesterday2.shortMAValue > yesterday2.longMAValue) //上穿后连续3天稳住
+            // || (today.shortMAValue > today.longMAValue && yesterday.shortMAValue > yesterday.longMAValue && yesterday2.shortMAValue > yesterday2.longMAValue) //上穿后连续3天稳住
             ) {
                 // 发生金叉
                 if (entryData == null) {
@@ -115,7 +116,9 @@ object Utils {
                 minPercentage = percentage
                 minPercentageDisplay = display
             }
-            // sb.append("$display\n")
+            if (logPerCross) {
+                sb.append("$display\n")
+            }
 
             // 累计到年份映射中
             // 以金叉 (upData) 发生的年份为准进行累计

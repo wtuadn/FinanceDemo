@@ -31,7 +31,7 @@ class SinaFinance {
         // val symbol = "sz980092" to "自由现金流指数"
         // val symbol = "sh515450" to "南方红利低波50"
         val scale = 240
-        val d = 1
+        val d = 5
 
         var json: String? = runCatching { File("data", "${symbol.first}.$d.json").readText() }.getOrNull()
         if (json.isNullOrEmpty()) {
@@ -47,63 +47,93 @@ class SinaFinance {
             )
         }
         if (!json.isNullOrEmpty()) {
-            var chartData = parseChartData(json)
-            chartData = chartData.subList(chartData.indexOfLast { it.date.startsWith("2020-12") } + 1, chartData.size)
-            val shortMA = 1
-            val longMA = 20
-            val shortMADataList = Utils.calculateMAData(chartData, shortMA)
-            val longMADataList = Utils.calculateMAData(chartData, longMA)
-
-            val list = mutableListOf<Triple<Double, Double, String>>()
-
-            val start = 0.0
-            val end = 0.1001
-            val step = 0.005
-            var upCrossMADiffRate = start
-            var downCrossMADiffRate = start
-            // 使用 while 循环进行浮点数步进迭代
-            while (upCrossMADiffRate <= end) {
-                while (downCrossMADiffRate >= -end) {
-                    val result = Utils.calculateMACross(
-                        shortMADataList = shortMADataList,
-                        longMADataList = longMADataList,
-                        upCrossMADiffRate = upCrossMADiffRate,
-                        downCrossMADiffRate = downCrossMADiffRate,
-                    )
-                    val args =
-                        "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
-                            "upCrossMADiffRate=${"%.3f".format(upCrossMADiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossMADiffRate)} ---"
-                    list.add(Triple(result.first, result.second, "\n$args \n${result.third} "))
-                    downCrossMADiffRate -= step
-                }
-                upCrossMADiffRate += step
-                downCrossMADiffRate = start
-            }
-            println("\n\n收益优先")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            list.sortedByDescending { it.first }
-                .subList(0, 10)
-                .forEach {
-                    println(it.third)
-                }
-            println("\n\n回撤优先")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-            list.sortedWith(
-                compareByDescending<Triple<Double, Double, String>> {
-                    it.second
-                }.thenByDescending {
-                    it.first
-                }
-            ).subList(0, 10)
-                .forEach {
-                    println(it.third)
-                }
-            println()
+            val chartData = parseChartData(json)
+            calculateBestArgs(chartData, symbol, d)
+            // calculateSpecificArg(chartData, symbol, d)
         }
+
+        println()
+    }
+
+    private fun calculateSpecificArg(chartData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
+        var chartData = chartData
+        chartData = chartData.subList(chartData.indexOfLast { it.date.startsWith("2020-12") } + 1, chartData.size)
+        val shortMA = 1
+        val longMA = 15
+        val upCrossMADiffRate = 0.000
+        val downCrossMADiffRate = -0.000
+        val shortMADataList = Utils.calculateMAData(chartData, shortMA)
+        val longMADataList = Utils.calculateMAData(chartData, longMA)
+        val result = Utils.calculateMACross(
+            shortMADataList = shortMADataList,
+            longMADataList = longMADataList,
+            upCrossMADiffRate = upCrossMADiffRate,
+            downCrossMADiffRate = downCrossMADiffRate,
+            logPerCross = true,
+        )
+        val args =
+            "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
+                "upCrossMADiffRate=${"%.3f".format(upCrossMADiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossMADiffRate)} ---"
+        println("\n$args \n${result.third} ")
+    }
+
+    private fun calculateBestArgs(chartData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
+        var chartData = chartData
+        chartData = chartData.subList(chartData.indexOfLast { it.date.startsWith("2020-12") } + 1, chartData.size)
+        val shortMA = 1
+        val longMA = 5
+        val shortMADataList = Utils.calculateMAData(chartData, shortMA)
+        val longMADataList = Utils.calculateMAData(chartData, longMA)
+
+        val list = mutableListOf<Triple<Double, Double, String>>()
+
+        val start = 0.0
+        val end = 0.1001
+        val step = 0.005
+        var upCrossMADiffRate = start
+        var downCrossMADiffRate = start
+        // 使用 while 循环进行浮点数步进迭代
+        while (upCrossMADiffRate <= end) {
+            while (downCrossMADiffRate >= -end) {
+                val result = Utils.calculateMACross(
+                    shortMADataList = shortMADataList,
+                    longMADataList = longMADataList,
+                    upCrossMADiffRate = upCrossMADiffRate,
+                    downCrossMADiffRate = downCrossMADiffRate,
+                    logPerCross = false,
+                )
+                val args =
+                    "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
+                        "upCrossMADiffRate=${"%.3f".format(upCrossMADiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossMADiffRate)} ---"
+                list.add(Triple(result.first, result.second, "\n$args \n${result.third} "))
+                downCrossMADiffRate -= step
+            }
+            upCrossMADiffRate += step
+            downCrossMADiffRate = start
+        }
+        println("\n\n收益优先")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        list.sortedByDescending { it.first }
+            .subList(0, 10.coerceAtMost(list.size))
+            .forEach {
+                println(it.third)
+            }
+        println("\n\n回撤优先")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
+        list.sortedWith(
+            compareByDescending<Triple<Double, Double, String>> {
+                it.second
+            }.thenByDescending {
+                it.first
+            }
+        ).subList(0, 10.coerceAtMost(list.size))
+            .forEach {
+                println(it.third)
+            }
     }
 
 //--- 参数：sh512100 中证1000ETF d=30 shortMA=1 longMA=5 upCrossMADiffRate=0.045 downCrossMADiffRate=-0.040 ---
