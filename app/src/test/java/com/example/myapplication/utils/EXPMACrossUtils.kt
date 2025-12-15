@@ -37,7 +37,7 @@ object EXPMACrossUtils {
             val todayMADiffRate = (today.shortMAValue - today.longMAValue) / today.longMAValue
             // 1. 检查金叉 (Golden Cross)
             if (
-                (yesterday.shortMAValue <= yesterday.longMAValue && todayMADiffRate > upCrossDiffRate) //上穿时超过阈值
+                (yesterday.shortMAValue < yesterday.longMAValue && todayMADiffRate >= upCrossDiffRate) //上穿时超过阈值
                 || (yesterday.shortMAValue > yesterday.longMAValue && todayMADiffRate > upCrossDiffRate) //上穿后某天超过阈值
             // || (today.shortMAValue > today.longMAValue && yesterday.shortMAValue > yesterday.longMAValue && yesterday2.shortMAValue > yesterday2.longMAValue) //上穿后连续3天稳住
             ) {

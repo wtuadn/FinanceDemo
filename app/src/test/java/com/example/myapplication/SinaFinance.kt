@@ -22,13 +22,14 @@ class SinaFinance {
 
     @Test
     fun main() {
-        // val symbol = "sz159338" to "中证A500ETF"
+        val symbol = "sz159338" to "中证A500ETF"
         // val symbol = "sh512100" to "中证1000ETF"
         // val symbol = "sh510500" to "中证500ETF"
         // val symbol = "sh510300" to "沪深300ETF"
         // val symbol = "sh510050" to "上证50ETF"
         // val symbol = "sh515880" to "通信ETF"
-        val symbol = "sz159941" to "纳指ETF广发"
+        // val symbol = "sz159941" to "纳指ETF广发"
+        // val symbol = "sh513300" to "纳指ETF华夏"
         // val symbol = "sh588000" to "科创50ETF"
         // val symbol = "sz159915" to "易方达创业板ETF"
         // val symbol = "sh518880" to "黄金ETF"
@@ -36,24 +37,22 @@ class SinaFinance {
         // val symbol = "sz980092" to "自由现金流指数"
         // val symbol = "sh515450" to "南方红利低波50"
         val scale = 240
-        val d = 5
+        val d = 1
 
-        var json: String? = runCatching { File("data", "${symbol.first}.$d.json").readText() }.getOrNull()
+        var json: String? = null
+        if (json.isNullOrEmpty()) {
+            json = runCatching { File("data", "${symbol.first}.$d.json").readText() }.getOrNull()
+        }
         if (json.isNullOrEmpty()) {
             val api =
-                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.first}&scale=${scale * d}&ma=no&datalen=10000"
+                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.first}&scale=${scale * d}&ma=no&datalen=100000"
             println(api)
-            json = Utils.httpGet(
-                urlString = api,
-                headMap = mapOf(
-                    "Referer" to "https://finance.sina.com.cn",
-                    "host" to "hq.sinajs.cn",
-                )
-            )
+            json = Utils.httpGet(urlString = api, headMap = mapOf("Referer" to "https://finance.sina.com.cn", "host" to "hq.sinajs.cn"))
         }
         if (!json.isNullOrEmpty()) {
             var kLineData = parseKLineData(json)
-            kLineData = Utils.findBestKLineDataList(kLineData)
+            // kLineData = Utils.findBestKLineDataList(kLineData)
+            // kLineData = kLineData.subList(kLineData.indexOfLast { it.date.startsWith("2012") } + 1, kLineData.size)
             // val short = EXPMACrossUtils.calculateEMAData(kLineData, 5)
             // val long = EXPMACrossUtils.calculateEMAData(kLineData, 10)
             // println("${short.subList(10,15).joinToString("\n")}\n")
@@ -62,32 +61,14 @@ class SinaFinance {
             // println("${long.takeLast(5).joinToString("\n")}\n")
             // calculateBestMAArgs(kLineData, symbol, d)
             // calculateSpecificMAArg(kLineData, symbol, d)
-            calculateBestEXPMAArgs(kLineData, symbol, d)
-            // calculateSpecificEXPMAArg(kLineData, symbol, d)
+            calculateBestEXPMAArgs(kLineData, symbol, scale, d)
+            // calculateSpecificEXPMAArg(kLineData, symbol, scale, d)
         }
 
         println()
     }
 
-    private fun calculateSpecificEXPMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
-        val shortMA = 5
-        val longMA = 10
-        val upCrossDiffRate = 0.000
-        val downCrossDiffRate = -0.000
-        val result = EXPMACrossUtils.calculateEXPMACross(
-            kLineData = kLineData,
-            shortMA = shortMA,
-            longMA = longMA,
-            upCrossDiffRate = upCrossDiffRate,
-            downCrossDiffRate = downCrossDiffRate,
-        )
-        val args =
-            "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
-                "upCrossDiffRate=${"%.3f".format(upCrossDiffRate)} downCrossDiffRate=${"%.3f".format(downCrossDiffRate)} ---"
-        println("\n$args \n${result}")
-    }
-
-    private fun calculateBestEXPMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
+    private fun calculateBestEXPMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
         println("--- 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
         val shortMA = 1
         val longMA = 5
@@ -110,7 +91,7 @@ class SinaFinance {
                     downCrossDiffRate = downCrossDiffRate,
                 )
                 val args =
-                    "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
+                    "--- 参数：${symbol.first} ${symbol.second} scale=$scale d=$d shortMA=$shortMA longMA=$longMA " +
                         "upCrossMADiffRate=${"%.3f".format(upCrossDiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossDiffRate)} ---"
                 list.add(result to args)
                 downCrossDiffRate -= step
@@ -141,6 +122,24 @@ class SinaFinance {
             .forEach {
                 println("\n${it.second} \n${it.first}")
             }
+    }
+
+    private fun calculateSpecificEXPMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
+        val shortMA = 1
+        val longMA = 5
+        val upCrossDiffRate = 0.000
+        val downCrossDiffRate = -0.000
+        val result = EXPMACrossUtils.calculateEXPMACross(
+            kLineData = kLineData,
+            shortMA = shortMA,
+            longMA = longMA,
+            upCrossDiffRate = upCrossDiffRate,
+            downCrossDiffRate = downCrossDiffRate,
+        )
+        val args =
+            "--- 参数：${symbol.first} ${symbol.second} scale=$scale d=$d shortMA=$shortMA longMA=$longMA " +
+                "upCrossDiffRate=${"%.3f".format(upCrossDiffRate)} downCrossDiffRate=${"%.3f".format(downCrossDiffRate)} ---"
+        println("\n$args \n${result}")
     }
 
     private fun calculateSpecificMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
@@ -217,7 +216,18 @@ class SinaFinance {
                 println(it.third)
             }
     }
-// --- 参数：sz159941 纳指ETF广发 d=5 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.010 ---
+// --- 参数：sz159338 中证A500ETF scale=240 d=1 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.005 ---
+// 2024 总次数: 4 胜率: 50.00% 涨幅: 1.55% 最大涨幅: 2.38% 最大回撤: -1.05%
+// 2025 总次数: 10 胜率: 60.00% 涨幅: 22.88% 最大涨幅: 7.75% 最大回撤: -2.65%
+// total: 平均年涨幅12.21% 总次数: 14 胜率: 57.14% 涨幅: 24.43% 最大涨幅: 7.75% 最大回撤: -2.65%
+
+// --- 参数：sz159941 纳指ETF广发 scale=60 d=1 shortMA=1 longMA=10 upCrossMADiffRate=0.000 downCrossMADiffRate=0.000 ---
+// 2023 总次数: 53 胜率: 43.40% 涨幅: 38.40% 最大涨幅: 5.86% 最大回撤: -1.99%
+// 2024 总次数: 61 胜率: 36.07% 涨幅: 28.20% 最大涨幅: 7.19% 最大回撤: -3.28%
+// 2025 总次数: 59 胜率: 38.98% 涨幅: 26.07% 最大涨幅: 7.90% 最大回撤: -2.81%
+// total: 平均年涨幅30.89% 总次数: 173 胜率: 39.31% 涨幅: 92.67% 最大涨幅: 7.90% 最大回撤: -3.28%
+
+// --- 参数：sz159941 纳指ETF广发 scale=240 d=5 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.010 ---
 // 2016 总次数: 2 胜率: 50.00% 涨幅: 8.00% 最大涨幅: 9.91% 最大回撤: -1.91%
 // 2017 总次数: 3 胜率: 33.33% 涨幅: 9.17% 最大涨幅: 12.47% 最大回撤: -2.36%
 // 2018 总次数: 4 胜率: 25.00% 涨幅: 11.82% 最大涨幅: 15.67% 最大回撤: -1.67%
@@ -229,62 +239,6 @@ class SinaFinance {
 // 2024 总次数: 3 胜率: 66.67% 涨幅: 15.01% 最大涨幅: 14.84% 最大回撤: -6.56%
 // 2025 总次数: 2 胜率: 100.00% 涨幅: 40.23% 最大涨幅: 26.88% 最大回撤: 0.00%
 // total: 平均年涨幅17.43% 总次数: 30 胜率: 50.00% 涨幅: 174.30% 最大涨幅: 33.28% 最大回撤: -6.56%
-
-//--- 参数：sh512100 中证1000ETF d=30 shortMA=1 longMA=5 upCrossMADiffRate=0.045 downCrossMADiffRate=-0.040 ---
-// --- 有效数据时间段为：2016-11-30 - 2025-12-12 ---
-// 2016: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2017: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2018: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2019: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2020: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2021: 40.13% 胜率：次数：1 胜率：100.00% 最大涨幅：2019-02-28 - 2021-03-31 : 40.13% 最大回撤：
-// 2022: 3.99% 胜率：次数：1 胜率：100.00% 最大涨幅：2021-05-31 - 2022-01-28 : 3.99% 最大回撤：
-// 2023: 156.61% 胜率：次数：1 胜率：100.00% 最大涨幅：2022-06-30 - 2023-07-31 : 156.61% 最大回撤：
-// 2024: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2025: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// --- 平均年收益20.07% 次数：3 胜率：100.00% 最大涨幅：2022-06-30 - 2023-07-31 : 156.61% 最大回撤： ---
-
-//--- 参数：sz159941 纳指ETF广发 d=30 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.050 ---
-// --- 有效数据时间段为：2016-01-29 - 2025-12-12 ---
-// 2016: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2017: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2018: 49.71% 胜率：次数：1 胜率：100.00% 最大涨幅：2016-07-29 - 2018-10-31 : 49.71% 最大回撤：
-// 2019: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2020: 16.54% 胜率：次数：1 胜率：100.00% 最大涨幅：2019-02-28 - 2020-03-31 : 16.54% 最大回撤：
-// 2021: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2022: 28.62% 胜率：次数：1 胜率：100.00% 最大涨幅：2020-04-30 - 2022-01-28 : 28.62% 最大回撤：
-// 2023: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2024: 0.00% 胜率：次数：0 胜率：0.00% 最大涨幅： 最大回撤：
-// 2025: 65.37% 胜率：次数：1 胜率：100.00% 最大涨幅：2023-02-28 - 2025-03-31 : 65.37% 最大回撤：
-// --- 平均年收益16.02% 次数：4 胜率：100.00% 最大涨幅：2023-02-28 - 2025-03-31 : 65.37% 最大回撤： ---
-
-//--- 参数：sh588000 科创50ETF d=1 shortMA=1 longMA=15 upCrossDiff=0.040 downCrossDiff=-0.040 ---
-// --- 有效数据时间段为：2021-01-04 - 2025-12-12 ---
-// 2021: 8.91% 胜率：次数：2 胜率：50.00% 最大涨幅：2021-05-25 - 2021-07-16 : 12.50% 最大回撤：2021-04-02 - 2021-04-14 : -3.59%
-// 2022: 1.43% 胜率：次数：3 胜率：66.67% 最大涨幅：2022-05-11 - 2022-07-13 : 5.17% 最大回撤：2022-08-05 - 2022-08-23 : -4.69%
-// 2023: 1.91% 胜率：次数：1 胜率：100.00% 最大涨幅：2023-03-23 - 2023-04-25 : 1.91% 最大回撤：
-// 2024: 40.60% 胜率：次数：4 胜率：50.00% 最大涨幅：2024-09-26 - 2024-11-19 : 44.51% 最大回撤：2024-07-19 - 2024-07-26 : -3.95%
-// 2025: 41.49% 胜率：次数：2 胜率：100.00% 最大涨幅：2025-07-25 - 2025-10-16 : 34.08% 最大回撤：
-// --- 平均年收益18.87% 次数：12 胜率：66.67% 最大涨幅：2024-09-26 - 2024-11-19 : 44.51% 最大回撤：2022-08-05 - 2022-08-23 : -4.69% ---
-
-//--- 参数：sz159915 易方达创业板ETF d=5 shortMA=1 longMA=5 upCrossDiff=0.030 downCrossDiff=-0.030 ---
-// --- 有效数据时间段为：2016-01-08 - 2025-12-12 ---
-// 2016: -5.53% 胜率：次数：2 胜率：0.00% 最大涨幅： 最大回撤：2016-06-03 - 2016-07-29 : -3.70%
-// 2017: -0.06% 胜率：次数：1 胜率：0.00% 最大涨幅： 最大回撤：2017-08-18 - 2017-11-03 : -0.06%
-// 2018: -4.18% 胜率：次数：2 胜率：0.00% 最大涨幅： 最大回撤：2018-03-02 - 2018-06-01 : -2.94%
-// 2019: 28.31% 胜率：次数：2 胜率：100.00% 最大涨幅：2019-02-15 - 2019-04-30 : 19.28% 最大回撤：
-// 2020: 41.34% 胜率：次数：2 胜率：100.00% 最大涨幅：2020-04-17 - 2020-09-11 : 26.04% 最大回撤：
-// 2021: 16.26% 胜率：次数：2 胜率：100.00% 最大涨幅：2020-10-09 - 2021-02-26 : 9.03% 最大回撤：
-// 2022: 6.16% 胜率：次数：2 胜率：50.00% 最大涨幅：2022-05-20 - 2022-07-29 : 10.52% 最大回撤：2022-11-04 - 2022-12-30 : -4.36%
-// 2023: -1.61% 胜率：次数：1 胜率：0.00% 最大涨幅： 最大回撤：2023-01-13 - 2023-02-17 : -1.61%
-// 2024: -3.51% 胜率：次数：2 胜率：50.00% 最大涨幅：2024-02-23 - 2024-04-12 : 0.23% 最大回撤：2024-04-30 - 2024-06-07 : -3.74%
-// 2025: 48.39% 胜率：次数：3 胜率：66.67% 最大涨幅：2025-05-09 - 2025-10-17 : 46.93% 最大回撤：2025-02-07 - 2025-04-03 : -4.88%
-// --- 平均年收益12.56% 次数：19 胜率：52.63% 最大涨幅：2025-05-09 - 2025-10-17 : 46.93% 最大回撤：2025-02-07 - 2025-04-03 : -4.88% ---
-
-//--- 参数：sz159201 华夏国证自由现金流 d=1 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.005 ---
-// --- 有效数据时间段为：2025-02-27 - 2025-12-12 ---
-// 2025: 24.41% 胜率：次数：10 胜率：90.00% 最大涨幅：2025-06-24 - 2025-07-28 : 6.53% 最大回撤：2025-09-01 - 2025-09-04 : -2.40%
-// --- 平均年收益24.41% 次数：10 胜率：90.00% 最大涨幅：2025-06-24 - 2025-07-28 : 6.53% 最大回撤：2025-09-01 - 2025-09-04 : -2.40% ---
 
     /**
      * 解析原始 JSON 字符串，提取时间戳和收盘价，并进行转换封装。
