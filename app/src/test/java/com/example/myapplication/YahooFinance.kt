@@ -1,8 +1,12 @@
 package com.example.myapplication
 
+import com.example.myapplication.data.KLineData
+import com.example.myapplication.utils.MACrossUtils
+import com.example.myapplication.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Test
+import kotlin.math.round
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -25,19 +29,17 @@ class YahooFinance {
 
         val json = Utils.httpGet(api)
         if (!json.isNullOrEmpty()) {
-            val chartData = parseChartData(json)
-            val maDataList1 = Utils.calculateMAData(chartData, 1)
-            val maDataList2 = Utils.calculateMAData(chartData, 5)
-            Utils.calculateMACross(maDataList1, maDataList2)
+            val kLineData = parseKLineData(json)
+            MACrossUtils.calculateMACross(kLineData, 1,5)
         }
     }
 
     /**
      * 解析原始 JSON 字符串，提取时间戳和收盘价，并进行转换封装。
      * @param jsonString 完整的 JSON 字符串。
-     * @return ChartData 对象的列表。
+     * @return KLineData 对象的列表。
      */
-    fun parseChartData(jsonString: String): List<KLineData> {
+    fun parseKLineData(jsonString: String): List<KLineData> {
         val resultList = mutableListOf<KLineData>()
 
         try {
@@ -62,21 +64,11 @@ class YahooFinance {
             for (i in 0 until timestampArray.length()) {
                 val timestampSecs = timestampArray.getLong(i)
 
-                // 检查收盘价是否为 null (JSON 中为 null)
-                val closeValue: Double = if (closeArray.isNull(i)) {
-                    -1.0
-                } else {
-                    closeArray.getDouble(i)
-                }
-
                 // 1. 转换日期
                 val dateStr = Utils.timestampToDate(timestampSecs)
 
-                // 2. 四舍五入收盘价
-                val roundedClose = Utils.roundToThreeDecimalPlaces(closeValue)
-
                 // 3. 封装并添加到结果列表
-                resultList.add(KLineData(dateStr, roundedClose, 0))
+                resultList.add(KLineData(dateStr, closeArray.optString(i), 0))
             }
         } catch (e: Exception) {
             System.err.println("JSON 解析或转换失败: ${e.message}")
@@ -85,5 +77,18 @@ class YahooFinance {
         }
 
         return Utils.findLongestNonNullSublist(resultList)
+    }
+
+
+    /**
+     * 将收盘价四舍五入保留小数点后3位。
+     * @param value 原始收盘价 (Double)。
+     * @return 四舍五入后的 Double 值。
+     */
+    fun roundToThreeDecimalPlaces(value: Double): Double {
+        // 放大 1000 倍，四舍五入，然后除以 1000
+        // 注意：这里的乘法和除法会导致精度问题，但对于浮点数操作来说是常见且最简单的原生解决方案。
+        // 更严谨的做法是使用 BigDecimal，但由于要求不依赖第三方库，我们使用 Double 的原生数学操作。
+        return round(value * 1000.0) / 1000.0
     }
 }

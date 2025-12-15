@@ -1,8 +1,8 @@
-package com.example.myapplication
+package com.example.myapplication.data
 
 
 // 均线数据
-data class MACrossData(
+data class MAData(
     val date: String,
     val closePrice: Double, //收盘价
     val volume: Long, //成交量
