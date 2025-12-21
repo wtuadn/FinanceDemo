@@ -22,7 +22,7 @@ class SinaFinance {
 
     @Test
     fun main() {
-        val symbol = "sz159338" to "中证A500ETF"
+        // val symbol = "sz159338" to "中证A500ETF"
         // val symbol = "sh512100" to "中证1000ETF"
         // val symbol = "sh510500" to "中证500ETF"
         // val symbol = "sh510300" to "沪深300ETF"
@@ -36,6 +36,7 @@ class SinaFinance {
         // val symbol = "sz159201" to "华夏国证自由现金流"
         // val symbol = "sz980092" to "自由现金流指数"
         // val symbol = "sh515450" to "南方红利低波50"
+        val symbol = "sh515100" to "红利低波100ETF"
         val scale = 240
         val d = 1
 
@@ -51,7 +52,7 @@ class SinaFinance {
         }
         if (!json.isNullOrEmpty()) {
             var kLineData = parseKLineData(json)
-            // kLineData = Utils.findBestKLineDataList(kLineData)
+            kLineData = Utils.findBestKLineDataList(kLineData)
             // kLineData = kLineData.subList(kLineData.indexOfLast { it.date.startsWith("2012") } + 1, kLineData.size)
             // val short = EXPMACrossUtils.calculateEMAData(kLineData, 5)
             // val long = EXPMACrossUtils.calculateEMAData(kLineData, 10)
@@ -71,7 +72,7 @@ class SinaFinance {
     private fun calculateBestEXPMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
         println("--- 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
         val shortMA = 1
-        val longMA = 5
+        val longMA = 10
 
         val list = mutableListOf<Pair<MACrossResult, String>>()
 
@@ -126,7 +127,7 @@ class SinaFinance {
 
     private fun calculateSpecificEXPMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
         val shortMA = 1
-        val longMA = 5
+        val longMA = 20
         val upCrossDiffRate = 0.000
         val downCrossDiffRate = -0.000
         val result = EXPMACrossUtils.calculateEXPMACross(
@@ -144,9 +145,9 @@ class SinaFinance {
 
     private fun calculateSpecificMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
         val shortMA = 1
-        val longMA = 15
+        val longMA = 30
         val upCrossMADiffRate = 0.000
-        val downCrossMADiffRate = -0.000
+        val downCrossMADiffRate = -0.050
         val result = MACrossUtils.calculateMACross(
             kLineData = kLineData,
             shortMA = shortMA,
@@ -163,12 +164,12 @@ class SinaFinance {
 
     private fun calculateBestMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
         val shortMA = 1
-        val longMA = 5
+        val longMA = 40
 
         val list = mutableListOf<Triple<Double, Double, String>>()
 
         val start = 0.0
-        val end = 0.1001
+        val end = 0.0501
         val step = 0.005
         var upCrossMADiffRate = start
         var downCrossMADiffRate = start
@@ -216,16 +217,13 @@ class SinaFinance {
                 println(it.third)
             }
     }
-// --- 参数：sz159338 中证A500ETF scale=240 d=1 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.005 ---
-// 2024 总次数: 4 胜率: 50.00% 涨幅: 1.55% 最大涨幅: 2.38% 最大回撤: -1.05%
-// 2025 总次数: 10 胜率: 60.00% 涨幅: 22.88% 最大涨幅: 7.75% 最大回撤: -2.65%
-// total: 平均年涨幅12.21% 总次数: 14 胜率: 57.14% 涨幅: 24.43% 最大涨幅: 7.75% 最大回撤: -2.65%
-
-// --- 参数：sz159941 纳指ETF广发 scale=60 d=1 shortMA=1 longMA=10 upCrossMADiffRate=0.000 downCrossMADiffRate=0.000 ---
-// 2023 总次数: 53 胜率: 43.40% 涨幅: 38.40% 最大涨幅: 5.86% 最大回撤: -1.99%
-// 2024 总次数: 61 胜率: 36.07% 涨幅: 28.20% 最大涨幅: 7.19% 最大回撤: -3.28%
-// 2025 总次数: 59 胜率: 38.98% 涨幅: 26.07% 最大涨幅: 7.90% 最大回撤: -2.81%
-// total: 平均年涨幅30.89% 总次数: 173 胜率: 39.31% 涨幅: 92.67% 最大涨幅: 7.90% 最大回撤: -3.28%
+//--- 参数：sh515100 红利低波100ETF scale=240 d=1 shortMA=1 longMA=10 upCrossMADiffRate=0.015 downCrossMADiffRate=0.000 ---
+// 2021 总次数: 4 胜率: 75.00% 涨幅: 10.20% 最大涨幅: 8.05% 最大回撤: -1.34%
+// 2022 总次数: 4 胜率: 75.00% 涨幅: 14.21% 最大涨幅: 7.13% 最大回撤: -0.65%
+// 2023 总次数: 4 胜率: 75.00% 涨幅: 7.10% 最大涨幅: 4.61% 最大回撤: -0.94%
+// 2024 总次数: 6 胜率: 50.00% 涨幅: 9.43% 最大涨幅: 10.22% 最大回撤: -1.62%
+// 2025 总次数: 2 胜率: 50.00% 涨幅: -0.61% 最大涨幅: 0.26% 最大回撤: -0.87%
+// total: 平均年涨幅8.06% 总次数: 20 胜率: 65.00% 涨幅: 40.32% 最大涨幅: 10.22% 最大回撤: -1.62%
 
 // --- 参数：sz159941 纳指ETF广发 scale=240 d=5 shortMA=1 longMA=5 upCrossMADiffRate=0.000 downCrossMADiffRate=-0.010 ---
 // 2016 总次数: 2 胜率: 50.00% 涨幅: 8.00% 最大涨幅: 9.91% 最大回撤: -1.91%
