@@ -139,7 +139,7 @@ class SinaFinance {
         val args =
             "--- 参数：${symbol.first} ${symbol.second} scale=$scale d=$d shortMA=$shortMA longMA=$longMA " +
                 "upCrossDiffRate=${"%.3f".format(upCrossDiffRate)} downCrossDiffRate=${"%.3f".format(downCrossDiffRate)} ---"
-        println("\n$args \n${result}")
+        println("\n$args \n${result} \n${result.totalCrossData.crossDataList.joinToString("\n")}")
     }
 
     private fun calculateSpecificMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
