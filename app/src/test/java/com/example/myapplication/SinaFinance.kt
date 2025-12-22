@@ -2,8 +2,9 @@ package com.example.myapplication
 
 import com.example.myapplication.data.KLineData
 import com.example.myapplication.data.MACrossResult
-import com.example.myapplication.utils.EXPMACrossUtils
+import com.example.myapplication.data.SymbolData
 import com.example.myapplication.utils.MACrossUtils
+import com.example.myapplication.utils.MACrossUtils.MA_TYPE
 import com.example.myapplication.utils.Utils
 import org.json.JSONArray
 import org.junit.Test
@@ -22,83 +23,91 @@ class SinaFinance {
 
     @Test
     fun main() {
-        // val symbol = "sz159338" to "中证A500ETF"
-        // val symbol = "sh512100" to "中证1000ETF"
-        // val symbol = "sh510500" to "中证500ETF"
-        // val symbol = "sh510300" to "沪深300ETF"
-        // val symbol = "sh510050" to "上证50ETF"
-        // val symbol = "sh515880" to "通信ETF"
-        // val symbol = "sz159941" to "纳指ETF广发"
-        // val symbol = "sh513300" to "纳指ETF华夏"
-        // val symbol = "sh588000" to "科创50ETF"
-        // val symbol = "sz159915" to "易方达创业板ETF"
-        // val symbol = "sh518880" to "黄金ETF"
-        // val symbol = "sz159201" to "华夏国证自由现金流"
-        // val symbol = "sz980092" to "自由现金流指数"
-        // val symbol = "sh515450" to "南方红利低波50"
-        val symbol = "sh515100" to "红利低波100ETF"
+        // val symbol = SymbolData(code = "sz159338", desc = "中证A500ETF")
+        // val symbol = SymbolData(code = "sh512100", desc = "中证1000ETF")
+        // val symbol = SymbolData(code = "sh510500", desc = "中证500ETF")
+        // val symbol = SymbolData(code = "sh510300", desc = "沪深300ETF")
+        // val symbol = SymbolData(code = "sh510050", desc = "上证50ETF")
+        // val symbol = SymbolData(code = "sh515880", desc = "通信ETF")
+        // val symbol = SymbolData(code = "sz159941", desc = "纳指ETF广发")
+        // val symbol = SymbolData(code = "sz159632", desc = "纳指ETF华安")
+        // val symbol = SymbolData(code = "sh513300", desc = "纳指ETF华夏")
+        // val symbol = SymbolData(code = "sh588000", desc = "科创50ETF")
+        // val symbol = SymbolData(code = "sz159915", desc = "易方达创业板ETF")
+        val symbol = SymbolData(code = "sh518880", desc = "黄金ETF")
+        // val symbol = SymbolData(code = "sz159201", desc = "华夏国证自由现金流")
+        // val symbol = SymbolData(code = "sz980092", desc = "自由现金流指数")
+        // val symbol = SymbolData(code = "sh515450", desc = "南方红利低波50")
+        // val symbol = SymbolData(code = "sh515100", desc = "红利低波100ETF")
         val scale = 240
         val d = 1
 
         var json: String? = null
         if (json.isNullOrEmpty()) {
-            json = runCatching { File("data", "${symbol.first}.$d.json").readText() }.getOrNull()
+            json = runCatching { File("data", "${symbol.code}.$d.json").readText() }.getOrNull()
         }
         if (json.isNullOrEmpty()) {
             val api =
-                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.first}&scale=${scale * d}&ma=no&datalen=100000"
+                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.code}&scale=${scale * d}&ma=no&datalen=100000"
             println(api)
             json = Utils.httpGet(urlString = api, headMap = mapOf("Referer" to "https://finance.sina.com.cn", "host" to "hq.sinajs.cn"))
         }
         if (!json.isNullOrEmpty()) {
             var kLineData = parseKLineData(json)
             kLineData = Utils.findBestKLineDataList(kLineData)
-            // kLineData = kLineData.subList(kLineData.indexOfLast { it.date.startsWith("2012") } + 1, kLineData.size)
-            // val short = EXPMACrossUtils.calculateEMAData(kLineData, 5)
-            // val long = EXPMACrossUtils.calculateEMAData(kLineData, 10)
-            // println("${short.subList(10,15).joinToString("\n")}\n")
-            // println("${long.subList(10,15).joinToString("\n")}\n")
-            // println("${short.takeLast(5).joinToString("\n")}\n")
-            // println("${long.takeLast(5).joinToString("\n")}\n")
-            // calculateBestMAArgs(kLineData, symbol, d)
-            // calculateSpecificMAArg(kLineData, symbol, d)
-            calculateBestEXPMAArgs(kLineData, symbol, scale, d)
-            // calculateSpecificEXPMAArg(kLineData, symbol, scale, d)
+            calculateBestMAArgs(symbol, scale, d, kLineData, MA_TYPE.SMA)
+            calculateSpecificMAArg(
+                symbol = symbol,
+                scale = scale,
+                d = d,
+                kLineData = kLineData,
+                shortMA = 1,
+                longMA = 5,
+                maType = MA_TYPE.SMA,
+                upCrossDiffRate = 0.000,
+                downCrossDiffRate = 0.000,
+                volumeDiffRate = 0.000,
+            )
         }
 
         println()
     }
 
-    private fun calculateBestEXPMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
+    private fun calculateBestMAArgs(symbol: SymbolData, scale: Int, d: Int, kLineData: List<KLineData>, maType: MA_TYPE) {
         println("--- 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
-        val shortMA = 1
-        val longMA = 10
-
         val list = mutableListOf<Pair<MACrossResult, String>>()
+        listOf(0.0 /*0.05, 0.10, 0.15, 0.20, 0.25, 0.30*/).forEach { volumeDiffRate ->
+            listOf(1, 5, 10, 15, 20, 25, 30).forEach { shortMA ->
+                listOf(5, 10, 15, 20, 25, 30, 40, 60, 120).forEach { longMA ->
+                    if (shortMA >= longMA) return@forEach
 
-        val start = 0.0
-        val end = 0.0501
-        val step = 0.005
-        var upCrossDiffRate = start
-        var downCrossDiffRate = start
-        // 使用 while 循环进行浮点数步进迭代
-        while (upCrossDiffRate <= end) {
-            while (downCrossDiffRate >= -end) {
-                val result = EXPMACrossUtils.calculateEXPMACross(
-                    kLineData = kLineData,
-                    shortMA = shortMA,
-                    longMA = longMA,
-                    upCrossDiffRate = upCrossDiffRate,
-                    downCrossDiffRate = downCrossDiffRate,
-                )
-                val args =
-                    "--- 参数：${symbol.first} ${symbol.second} scale=$scale d=$d shortMA=$shortMA longMA=$longMA " +
-                        "upCrossMADiffRate=${"%.3f".format(upCrossDiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossDiffRate)} ---"
-                list.add(result to args)
-                downCrossDiffRate -= step
+                    val start = 0.0
+                    val end = 0.0501
+                    val step = 0.01
+                    var upCrossDiffRate = start
+                    var downCrossDiffRate = start
+                    // 使用 while 循环进行浮点数步进迭代
+                    while (upCrossDiffRate <= end) {
+                        while (downCrossDiffRate >= -end) {
+                            val result = MACrossUtils.calculateMACross(
+                                kLineData = kLineData,
+                                shortMA = shortMA,
+                                longMA = longMA,
+                                maType = maType,
+                                upCrossDiffRate = upCrossDiffRate,
+                                downCrossDiffRate = downCrossDiffRate,
+                                volumeDiffRate = volumeDiffRate,
+                            )
+                            val args = "--- 参数：${symbol.code} ${symbol.desc} scale=$scale d=$d shortMA=$shortMA longMA=$longMA maType:${maType}" +
+                                "upCrossMADiffRate=${upCrossDiffRate} downCrossMADiffRate=${downCrossDiffRate} volumeDiffRate=$volumeDiffRate ---"
+                            list.add(result to args)
+                            downCrossDiffRate -= step
+                        }
+                        upCrossDiffRate += step
+                        downCrossDiffRate = start
+                    }
+                }
             }
-            upCrossDiffRate += step
-            downCrossDiffRate = start
         }
         println("\n\n收益优先")
         println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
@@ -125,98 +134,32 @@ class SinaFinance {
             }
     }
 
-    private fun calculateSpecificEXPMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, scale: Int, d: Int) {
-        val shortMA = 1
-        val longMA = 20
-        val upCrossDiffRate = 0.000
-        val downCrossDiffRate = -0.000
-        val result = EXPMACrossUtils.calculateEXPMACross(
-            kLineData = kLineData,
-            shortMA = shortMA,
-            longMA = longMA,
-            upCrossDiffRate = upCrossDiffRate,
-            downCrossDiffRate = downCrossDiffRate,
-        )
-        val args =
-            "--- 参数：${symbol.first} ${symbol.second} scale=$scale d=$d shortMA=$shortMA longMA=$longMA " +
-                "upCrossDiffRate=${"%.3f".format(upCrossDiffRate)} downCrossDiffRate=${"%.3f".format(downCrossDiffRate)} ---"
-        println("\n$args \n${result} \n${result.totalCrossData.crossDataList.joinToString("\n")}")
-    }
-
-    private fun calculateSpecificMAArg(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
-        val shortMA = 1
-        val longMA = 30
-        val upCrossMADiffRate = 0.000
-        val downCrossMADiffRate = -0.050
+    private fun calculateSpecificMAArg(
+        symbol: SymbolData,
+        scale: Int,
+        d: Int,
+        kLineData: List<KLineData>,
+        shortMA: Int,
+        longMA: Int,
+        maType: MA_TYPE = MA_TYPE.SMA,
+        upCrossDiffRate: Double = 0.000,
+        downCrossDiffRate: Double = 0.000,
+        volumeDiffRate: Double = 0.000,
+    ) {
         val result = MACrossUtils.calculateMACross(
             kLineData = kLineData,
             shortMA = shortMA,
             longMA = longMA,
-            upCrossMADiffRate = upCrossMADiffRate,
-            downCrossMADiffRate = downCrossMADiffRate,
-            logPerCross = true,
+            maType = maType,
+            upCrossDiffRate = upCrossDiffRate,
+            downCrossDiffRate = downCrossDiffRate,
+            volumeDiffRate = volumeDiffRate,
         )
-        val args =
-            "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
-                "upCrossMADiffRate=${"%.3f".format(upCrossMADiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossMADiffRate)} ---"
-        println("\n$args \n${result.third} ")
+        val args = "--- 参数：${symbol.code} ${symbol.desc} scale=$scale d=$d shortMA=$shortMA longMA=$longMA maType:${maType}" +
+            "upCrossMADiffRate=${upCrossDiffRate} downCrossMADiffRate=${downCrossDiffRate} volumeDiffRate=$volumeDiffRate ---"
+        println("\n$args \n${result} \n${result.totalCrossData.crossDataList.joinToString("\n")}")
     }
 
-    private fun calculateBestMAArgs(kLineData: List<KLineData>, symbol: Pair<String, String>, d: Int) {
-        val shortMA = 1
-        val longMA = 40
-
-        val list = mutableListOf<Triple<Double, Double, String>>()
-
-        val start = 0.0
-        val end = 0.0501
-        val step = 0.005
-        var upCrossMADiffRate = start
-        var downCrossMADiffRate = start
-        // 使用 while 循环进行浮点数步进迭代
-        while (upCrossMADiffRate <= end) {
-            while (downCrossMADiffRate >= -end) {
-                val result = MACrossUtils.calculateMACross(
-                    kLineData = kLineData,
-                    shortMA = shortMA,
-                    longMA = longMA,
-                    upCrossMADiffRate = upCrossMADiffRate,
-                    downCrossMADiffRate = downCrossMADiffRate,
-                    logPerCross = false,
-                )
-                val args =
-                    "--- 参数：${symbol.first} ${symbol.second} d=$d shortMA=$shortMA longMA=$longMA " +
-                        "upCrossMADiffRate=${"%.3f".format(upCrossMADiffRate)} downCrossMADiffRate=${"%.3f".format(downCrossMADiffRate)} ---"
-                list.add(Triple(result.first, result.second, "\n$args \n${result.third} "))
-                downCrossMADiffRate -= step
-            }
-            upCrossMADiffRate += step
-            downCrossMADiffRate = start
-        }
-        println("\n\n收益优先")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        list.sortedByDescending { it.first }
-            .subList(0, 10.coerceAtMost(list.size))
-            .forEach {
-                println(it.third)
-            }
-        println("\n\n回撤优先")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---")
-        list.sortedWith(
-            compareByDescending<Triple<Double, Double, String>> {
-                it.second
-            }.thenByDescending {
-                it.first
-            }
-        ).subList(0, 10.coerceAtMost(list.size))
-            .forEach {
-                println(it.third)
-            }
-    }
 //--- 参数：sh515100 红利低波100ETF scale=240 d=1 shortMA=1 longMA=10 upCrossMADiffRate=0.015 downCrossMADiffRate=0.000 ---
 // 2021 总次数: 4 胜率: 75.00% 涨幅: 10.20% 最大涨幅: 8.05% 最大回撤: -1.34%
 // 2022 总次数: 4 胜率: 75.00% 涨幅: 14.21% 最大涨幅: 7.13% 最大回撤: -0.65%
@@ -250,7 +193,14 @@ class SinaFinance {
             val jsonArray = JSONArray(jsonString)
             for (i in 0 until jsonArray.length()) {
                 val jsonObject = jsonArray.getJSONObject(i)
-                resultList.add(KLineData(jsonObject.optString("day"), jsonObject.optString("close"), jsonObject.optLong("volume")))
+                resultList.add(
+                    KLineData(
+                        date = jsonObject.optString("day"),
+                        openPriceStr = jsonObject.optString("open"),
+                        closePriceStr = jsonObject.optString("close"),
+                        volume = jsonObject.optLong("volume")
+                    )
+                )
             }
         } catch (e: Exception) {
             System.err.println("JSON 解析或转换失败: ${e.message}")

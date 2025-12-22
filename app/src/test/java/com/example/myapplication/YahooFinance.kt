@@ -68,7 +68,10 @@ class YahooFinance {
                 val dateStr = Utils.timestampToDate(timestampSecs)
 
                 // 3. 封装并添加到结果列表
-                resultList.add(KLineData(dateStr, closeArray.optString(i), 0))
+                resultList.add(KLineData(
+                    date = dateStr,
+                    closePriceStr = closeArray.optString(i)
+                ))
             }
         } catch (e: Exception) {
             System.err.println("JSON 解析或转换失败: ${e.message}")
