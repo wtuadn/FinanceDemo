@@ -20,7 +20,7 @@ data class GroupedMACrossData(
             "总次数: $totalCount " +
             "胜率: ${Utils.getPercentageString(victoryRate)} " +
             "涨幅: ${Utils.getPercentageString(totalPercentage)} " +
-            "最大涨幅: ${Utils.getPercentageString(maxPercentage)} " +
-            "最大回撤: ${Utils.getPercentageString(minPercentage)}"
+            "单次最大涨幅: ${Utils.getPercentageString(maxPercentage)} " +
+            "单次最大回撤: ${Utils.getPercentageString(minPercentage)}"
     }
 }

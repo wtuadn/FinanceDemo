@@ -28,23 +28,23 @@ class SinaFinance {
         // val symbol = SymbolData(code = "sz159201", desc = "华夏国证自由现金流")
         // val symbol = SymbolData(code = "sh515100", desc = "红利低波100ETF")
         // val symbol = SymbolData(code = "sh512890", desc = "红利低波ETF")
-        // val symbol = SymbolData(code = "sz159941", desc = "纳指ETF广发")
+        val symbol = SymbolData(code = "sz159941", desc = "纳指ETF广发")
         // val symbol = SymbolData(code = "sh513130", desc = "恒生科技ETF")
         // val symbol = SymbolData(code = "sz159892", desc = "恒生医药ETF")
-        val symbol = SymbolData(code = "sz159545", desc = "恒生红利低波ETF")
+        // val symbol = SymbolData(code = "sz159545", desc = "恒生红利低波ETF")
         // val symbol = SymbolData(code = "sh515050", desc = "5G通信ETF")
 
         calculateBestMAArgs(symbol)
-        // calculateSpecificMAArg(
-        //     symbol = symbol,
-        //     scale = 240,
-        //     d = 1,
-        //     shortMA = 1,
-        //     longMA = 5,
-        //     maType = MA_TYPE.SMA,
-        //     upCrossDiffRate = 0.000,
-        //     downCrossDiffRate = 0.000,
-        // )
+        calculateSpecificMAArg(
+            symbol = symbol,
+            scale = 240,
+            d = 1,
+            shortMA = 20,
+            longMA = 60,
+            maType = MA_TYPE.SMA,
+            upCrossDiffRate = 0.010,
+            downCrossDiffRate = -0.050,
+        )
 
         println()
     }
@@ -117,15 +117,16 @@ class SinaFinance {
             .forEach {
                 println("\n${it.second} \n${it.first}")
             }
-        println("\n\n回撤优先")
+        println("\n\n最大回撤优先")
         repeat(10) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
-        list.sortedWith(
-            compareByDescending<Pair<MACrossResult, String>> {
-                it.first.totalCrossData.minPercentage
-            }.thenByDescending {
-                it.first.totalCrossData.totalPercentage
-            }
-        ).subList(0, 10.coerceAtMost(list.size))
+        list.filter { it.first.totalCrossData.totalCount > 0 && it.first.totalCrossData.totalPercentage > 0 }
+            .sortedWith(
+                compareByDescending<Pair<MACrossResult, String>> {
+                    it.first.maxDrawDownData.drawDown
+                }.thenByDescending {
+                    it.first.totalCrossData.totalPercentage
+                }
+            ).subList(0, 10.coerceAtMost(list.size))
             .forEach {
                 println("\n${it.second} \n${it.first}")
             }

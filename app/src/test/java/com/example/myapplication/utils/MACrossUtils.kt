@@ -6,6 +6,7 @@ import com.example.myapplication.data.KLineData
 import com.example.myapplication.data.MACrossData
 import com.example.myapplication.data.MACrossResult
 import com.example.myapplication.data.MAData
+import com.example.myapplication.data.MaxDrawDownData
 import kotlin.math.pow
 import kotlin.math.round
 
@@ -46,6 +47,9 @@ object MACrossUtils {
         val crossDataList = mutableListOf<MACrossData>()
         var crossData: AlignedMAData? = null // 记录交叉data
         var buyData: AlignedMAData? = null // 记录买入data
+        var currentAssetData: AlignedMAData? = null //当前资产价格
+        var maxDrawDownData = MaxDrawDownData() // 最大回撤
+        var tempDrawDownData = MaxDrawDownData() // 临时最大回撤
 
         for (i in 1 until alignedMAData.size) {
             val today = alignedMAData[i]
@@ -61,6 +65,7 @@ object MACrossUtils {
                     crossData = null
                 }
             } else {
+                currentAssetData = today
                 if (yesterday.shortMAValue > yesterday.longMAValue && today.shortMAValue <= today.longMAValue) {
                     crossData = today //记录死叉
                 }
@@ -81,6 +86,7 @@ object MACrossUtils {
                 if (buyData == null) {
                     // 记录 upData (买入信号)
                     buyData = today
+                    currentAssetData = today
                 }
             }
 
@@ -97,6 +103,35 @@ object MACrossUtils {
                     buyData = null // 清空入场数据
                 }
             }
+
+            // 记录最大回撤
+            if (currentAssetData != null) {
+                if (currentAssetData.closePrice >= tempDrawDownData.topData.closePrice) {
+                    // 发现新的高点，更新高点
+                    tempDrawDownData.topData = currentAssetData
+                    tempDrawDownData.bottomData = currentAssetData // 重置低点为当前高点
+                } else if (currentAssetData.closePrice < tempDrawDownData.bottomData.closePrice) {
+                    // 发现新的低点，更新低点
+                    tempDrawDownData.bottomData = currentAssetData
+                }
+
+                // 当回撤结束时（价格超过前期高点）或到达数据末尾时，更新最大回撤
+                if (buyData == null
+                    || (currentAssetData.closePrice >= tempDrawDownData.topData.closePrice &&
+                        tempDrawDownData.topData.date != tempDrawDownData.bottomData.date)
+                ) { // 确保不是同一天
+                    if (currentAssetData.closePrice >= tempDrawDownData.topData.closePrice) {
+                        tempDrawDownData.fixedData = currentAssetData
+                    }
+                    if (tempDrawDownData.drawDown < maxDrawDownData.drawDown) {
+                        maxDrawDownData = tempDrawDownData
+                    }
+                    tempDrawDownData = MaxDrawDownData() // 重新初始化临时数据
+                }
+            }
+            if (buyData == null) {
+                currentAssetData = null
+            }
         }
         val yearMap = crossDataList.groupBy { it.exitData.date.substring(0, 4).toInt() }
         return MACrossResult(
@@ -106,6 +141,7 @@ object MACrossUtils {
                     this.getOrPut(it.key) { GroupedMACrossData("${it.key}", yearMap[it.key] ?: emptyList()) }
                 }
             },
+            maxDrawDownData = maxDrawDownData,
         )
     }
 

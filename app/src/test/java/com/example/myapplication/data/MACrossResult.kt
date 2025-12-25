@@ -8,12 +8,13 @@ import com.example.myapplication.utils.Utils
 data class MACrossResult(
     val totalCrossData: GroupedMACrossData, //总结果
     val yearCrossDataMap: Map<Int, GroupedMACrossData>, // 按年结果
+    val maxDrawDownData: MaxDrawDownData,
 ) {
     fun getTotalDesc(): String {
         val yearlyPercentage = totalCrossData.totalPercentage / yearCrossDataMap.size
         val totalStr = totalCrossData.toString()
         val insert = totalCrossData.groupKey.length + 1
-        return "${totalStr.substring(0, insert)}平均年涨幅${Utils.getPercentageString(yearlyPercentage)} ${totalStr.substring(insert)}"
+        return "${totalStr.take(insert)}平均年涨幅${Utils.getPercentageString(yearlyPercentage)} ${totalStr.substring(insert)} \n$maxDrawDownData"
     }
 
     override fun toString(): String {
