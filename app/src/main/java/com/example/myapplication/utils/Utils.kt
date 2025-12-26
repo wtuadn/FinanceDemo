@@ -17,13 +17,11 @@ import java.util.TimeZone
 object Utils {
     fun calculateAlignedMAData(
         shortMADataList: List<MAData>,
-        middleMADataList: List<MAData>,
         longMADataList: List<MAData>,
     ): List<AlignedMAData> {
         return shortMADataList.mapIndexedNotNull { index, ma1 ->
-            val ma2 = middleMADataList.getOrNull(index)
-            val ma3 = longMADataList.getOrNull(index)
-            if (ma1.value != null && ma2?.value != null && ma3?.value != null && ma1.date == ma2.date && ma2.date == ma3.date) {
+            val ma2 = longMADataList.getOrNull(index)
+            if (ma1.value != null && ma2?.value != null && ma1.date == ma2.date) {
                 AlignedMAData(
                     ma1.date,
                     ma1.closePrice,

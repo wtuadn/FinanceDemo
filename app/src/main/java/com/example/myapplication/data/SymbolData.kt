@@ -15,5 +15,4 @@ data class SymbolData(
     var maType: MAType = MAType.SMA,
     var upCrossDiffRate: Double = 0.000,
     var downCrossDiffRate: Double = 0.000,
-    var middleMA: Int = 10,
 )

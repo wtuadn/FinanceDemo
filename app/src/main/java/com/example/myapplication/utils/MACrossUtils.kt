@@ -64,10 +64,10 @@ object MACrossUtils {
     ): MACrossResult {
 
         // 1. 计算长短均线
-        val (shortMADataList, middleMADataList, longMADataList) = calculateMADataLists(kLineData, symbol)
+        val (shortMADataList, longMADataList) = calculateMADataLists(kLineData, symbol)
 
         // 2. 对齐数据（确保日期匹配，过滤掉无效的 null 值）
-        val alignedMAData = Utils.calculateAlignedMAData(shortMADataList, middleMADataList, longMADataList)
+        val alignedMAData = Utils.calculateAlignedMAData(shortMADataList, longMADataList)
 
         // 3. 策略与回撤计算变量初始化
         val crossDataList = mutableListOf<MACrossData>()
@@ -140,19 +140,17 @@ object MACrossUtils {
     private fun calculateMADataLists(
         kLineData: List<KLineData>,
         symbol: SymbolData,
-    ): Triple<List<MAData>, List<MAData>, List<MAData>> {
+    ): Pair<List<MAData>, List<MAData>> {
         return when (symbol.maType) {
             MAType.SMA -> {
-                Triple(
+                Pair(
                     calculateMAData(kLineData, symbol.shortMA),
-                    calculateMAData(kLineData, symbol.middleMA),
                     calculateMAData(kLineData, symbol.longMA)
                 )
             }
             MAType.EMA -> {
-                Triple(
+                Pair(
                     calculateEMAData(kLineData, symbol.shortMA),
-                    calculateMAData(kLineData, symbol.middleMA),
                     calculateEMAData(kLineData, symbol.longMA)
                 )
             }
