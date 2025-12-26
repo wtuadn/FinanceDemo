@@ -1,7 +1,6 @@
 package com.example.myapplication
 
 import com.example.myapplication.data.KLineData
-import com.example.myapplication.utils.MACrossUtils
 import com.example.myapplication.utils.Utils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -30,7 +29,6 @@ class YahooFinance {
         val json = Utils.httpGet(api)
         if (!json.isNullOrEmpty()) {
             val kLineData = parseKLineData(json)
-            MACrossUtils.calculateMACross(kLineData, 1,5)
         }
     }
 
@@ -68,10 +66,12 @@ class YahooFinance {
                 val dateStr = Utils.timestampToDate(timestampSecs)
 
                 // 3. 封装并添加到结果列表
-                resultList.add(KLineData(
-                    date = dateStr,
-                    closePriceStr = closeArray.optString(i)
-                ))
+                resultList.add(
+                    KLineData(
+                        date = dateStr,
+                        closePriceStr = closeArray.optString(i)
+                    )
+                )
             }
         } catch (e: Exception) {
             System.err.println("JSON 解析或转换失败: ${e.message}")
@@ -81,7 +81,6 @@ class YahooFinance {
 
         return Utils.findLongestNonNullSublist(resultList)
     }
-
 
     /**
      * 将收盘价四舍五入保留小数点后3位。

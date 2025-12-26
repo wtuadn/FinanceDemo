@@ -3,7 +3,10 @@ package com.example.myapplication.utils
 import com.example.myapplication.data.AlignedMAData
 import com.example.myapplication.data.KLineData
 import com.example.myapplication.data.MAData
+import com.example.myapplication.data.SymbolData
+import org.json.JSONArray
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
@@ -14,11 +17,13 @@ import java.util.TimeZone
 object Utils {
     fun calculateAlignedMAData(
         shortMADataList: List<MAData>,
+        middleMADataList: List<MAData>,
         longMADataList: List<MAData>,
     ): List<AlignedMAData> {
         return shortMADataList.mapIndexedNotNull { index, ma1 ->
-            val ma2 = longMADataList.getOrNull(index)
-            if (ma1.value != null && ma2?.value != null && ma1.date == ma2.date) {
+            val ma2 = middleMADataList.getOrNull(index)
+            val ma3 = longMADataList.getOrNull(index)
+            if (ma1.value != null && ma2?.value != null && ma3?.value != null && ma1.date == ma2.date && ma2.date == ma3.date) {
                 AlignedMAData(
                     ma1.date,
                     ma1.closePrice,
@@ -135,6 +140,59 @@ object Utils {
         return kLineData
     }
 
+    fun getSinaKLineData(symbol: SymbolData, findBestData: Boolean = false, useLocalData: Boolean = false, datalen: Int = 1): List<KLineData> {
+        var json: String? = null
+        if (useLocalData) {
+            json = runCatching { File("data", "${symbol.code}.${symbol.d}.json").readText() }.getOrNull()
+        }
+        if (json.isNullOrEmpty()) {
+            val api =
+                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.code}&scale=${symbol.scale * symbol.d}&ma=no&datalen=$datalen"
+            json = httpGet(
+                urlString = api,
+                // headMap = mapOf("Referer" to "https://finance.sina.com.cn", "host" to "hq.sinajs.cn")
+            )
+        }
+        if (!json.isNullOrEmpty()) {
+            val kLineData = parseSinaKLineData(json)
+            return if (findBestData) {
+                findBestKLineDataList(kLineData)
+            } else {
+                kLineData
+            }
+        }
+        return emptyList()
+    }
+
+    /**
+     * 解析原始 JSON 字符串，提取时间戳和收盘价，并进行转换封装。
+     * @param json 完整的 JSON 字符串。
+     * @return ChartData 对象的列表。
+     */
+    fun parseSinaKLineData(json: String): List<KLineData> {
+        val resultList = mutableListOf<KLineData>()
+
+        try {
+            val jsonArray = JSONArray(json)
+            for (i in 0 until jsonArray.length()) {
+                val jsonObject = jsonArray.getJSONObject(i)
+                resultList.add(
+                    KLineData(
+                        date = jsonObject.optString("day"),
+                        openPriceStr = jsonObject.optString("open"),
+                        closePriceStr = jsonObject.optString("close"),
+                        volume = jsonObject.optLong("volume")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            System.err.println("JSON 解析或转换失败: ${e.message}")
+            e.printStackTrace()
+            return emptyList()
+        }
+        return findLongestNonNullSublist(resultList)
+    }
+
     /**
      * 执行完全同步阻塞的 GET 请求。
      * 该函数在调用它的线程中执行所有网络 I/O，直到响应返回。
@@ -152,7 +210,7 @@ object Utils {
             connection.readTimeout = 5000    // 读取超时 (毫秒)
             connection.setRequestProperty(
                 "User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
             )
             headMap?.forEach {
                 connection.setRequestProperty(it.key, it.value)

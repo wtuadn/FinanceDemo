@@ -7,5 +7,6 @@ data class AlignedMAData(
     val closePrice: Double = 0.0,
     val volume: Long = 0L,
     val shortMAValue: Double = 0.0,
+    val middleMAValue: Double = 0.0,
     val longMAValue: Double = 0.0,
 )
