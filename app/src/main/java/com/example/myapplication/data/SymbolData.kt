@@ -15,4 +15,6 @@ data class SymbolData(
     var maType: MAType = MAType.SMA,
     var upCrossDiffRate: Double = 0.000,
     var downCrossDiffRate: Double = 0.000,
+    var countlyPercentage: Double = 0.0, // 平均次涨幅
+    var mdd: Double = 0.0, // 最大本金损失率
 )

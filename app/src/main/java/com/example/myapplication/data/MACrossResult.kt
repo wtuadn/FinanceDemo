@@ -13,10 +13,11 @@ data class MACrossResult(
 ) {
 
     fun getTotalDesc(): String {
+        val countlyPercentage = totalCrossData.countlyPercentage
         val yearlyPercentage = totalCrossData.totalPercentage / yearCrossDataMap.size
         val totalStr = totalCrossData.toString()
         val insert = totalCrossData.groupKey.length + 1
-        return "${totalStr.take(insert)}平均年涨幅${Utils.getPercentageString(yearlyPercentage)} ${totalStr.substring(insert)} \n$maxDrawDownData"
+        return "${totalStr.take(insert)}平均次涨幅${Utils.getPercentageString(countlyPercentage)} 平均年涨幅${Utils.getPercentageString(yearlyPercentage)} ${totalStr.substring(insert)} \n$maxDrawDownData"
     }
 
     override fun toString(): String {

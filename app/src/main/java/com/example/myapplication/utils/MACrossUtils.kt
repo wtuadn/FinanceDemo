@@ -29,14 +29,19 @@ object MACrossUtils {
      * 用于跟踪回撤和净值曲线的状态
      */
     private data class DrawdownState(
-        var currentBalance: Double = 1.0,
-        var peakBalance: Double = 1.0,
-        var currentPeakDate: String = "",
-        var maxDrawDown: Double = 0.0,
-        var maxDDPeakDate: String = "",
-        var maxDDValleyDate: String = "",
-        var maxDDPeakValue: Double = 1.0,
-        var maxDDRecoveryDate: String? = null,
+        var currentBalance: Double = 1.0, // 当前净值余额，初始值为1.0（代表100%本金）
+        var peakBalance: Double = 1.0, // 历史最高净值，即历史高水位标记
+        var currentPeakDate: String = "", // 当前历史最高净值对应的日期
+        var maxDrawDown: Double = 0.0, // 最大回撤率，计算公式为(peakBalance - currentBalance) / peakBalance
+        var maxDDPeakDate: String = "", // 最大回撤发生时的峰值日期（波峰）
+        var maxDDValleyDate: String = "", // 最大回撤达到最低点的日期（波谷）
+        var maxDDPeakValue: Double = 1.0, // 最大回撤发生时的峰值净值
+        var maxDDRecoveryDate: String? = null, // 最大回撤的修复日期（净值重新回到峰值的日期），如果未修复则为 null
+        var buyBalance: Double? = null, // 买入时的本金净值，用于计算买入后最大损失率
+        var maxLossFromBuy: Double = 0.0, // 买入后相对于买入本金的最大损失率
+        var maxLossFromBuyDate: String = "", // 买入后最大损失发生的日期
+        var maxLossFromBuyStartDate: String = "", // 买入后最大损失开始的日期（首次达到最大损失的日期）
+        var maxLossFromBuyRecoveryDate: String? = null, // 买入后最大损失的修复日期（净值回到买入本金水平的日期），如果未修复则为 null
     )
     // -------------------------------------------------
 
@@ -121,12 +126,17 @@ object MACrossUtils {
                     this[year] = GroupedMACrossData("$year", yearMap[year] ?: emptyList())
                 }
             },
+            // 在 MACrossResult 的计算部分，需要更新 MaxDrawDownData
             maxDrawDownData = MaxDrawDownData(
                 maxDrawDownRate = drawdownState.maxDrawDown,
                 peakDate = drawdownState.maxDDPeakDate,
                 valleyDate = drawdownState.maxDDValleyDate,
                 recoveryDate = drawdownState.maxDDRecoveryDate,
-                peakValue = drawdownState.maxDDPeakValue
+                peakValue = drawdownState.maxDDPeakValue,
+                maxLossFromBuyRate = drawdownState.maxLossFromBuy,
+                maxLossFromBuyDate = drawdownState.maxLossFromBuyDate,
+                maxLossFromBuyStartDate = drawdownState.maxLossFromBuyStartDate,
+                maxLossFromBuyRecoveryDate = drawdownState.maxLossFromBuyRecoveryDate
             ),
             latestTradeSignalData = latestTradeSignalData,
         )
@@ -171,31 +181,62 @@ object MACrossUtils {
         val newState = state.copy() // Work on a copy for cleaner state updates
 
         // 1. 如果昨天结束时持有仓位，今天的涨跌幅计入净值
+        val changeRatio = today.closePrice / yesterday.closePrice
         if (buyData != null) {
-            val changeRatio = today.closePrice / yesterday.closePrice
             newState.currentBalance *= changeRatio
         }
 
-        // 2. 更新历史最高净值 (High Water Mark)
+        // 2. 更新买入后最大损失率 - 只有在持仓期间才计算
+        if (buyData != null) {
+            // 如果是第一次买入，记录初始本金
+            if (newState.buyBalance == null) {
+                newState.buyBalance = newState.currentBalance / changeRatio
+                newState.maxLossFromBuyStartDate = today.date // 记录买入日期作为可能的最大损失开始日期
+            }
+
+            // 计算从买入时的本金开始的损失率
+            val lossFromBuy = (newState.currentBalance - newState.buyBalance!!) / newState.buyBalance!!
+
+            // 更新买入后最大损失率
+            if (lossFromBuy < newState.maxLossFromBuy) {
+                newState.maxLossFromBuy = lossFromBuy
+                newState.maxLossFromBuyDate = today.date
+                // 如果是首次达到最大损失，记录开始日期
+                if (newState.maxLossFromBuy == 0.0) {
+                    newState.maxLossFromBuyStartDate = today.date
+                }
+                // 既然创了新低，之前的修复记录失效
+                newState.maxLossFromBuyRecoveryDate = null
+            } else if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
+                // 检查是否从最大损失中恢复（净值回到买入时的本金水平）
+                if (newState.currentBalance >= newState.buyBalance!!) {
+                    newState.maxLossFromBuyRecoveryDate = today.date
+                }
+            }
+        } else {
+            newState.buyBalance = null
+        }
+
+        // 3. 更新历史最高净值 (High Water Mark)
         if (newState.currentBalance > newState.peakBalance) {
             newState.peakBalance = newState.currentBalance
             newState.currentPeakDate = today.date
         }
 
-        // 3. 计算当前回撤
-        val currentDrawDown = if (newState.peakBalance > 0) (newState.peakBalance - newState.currentBalance) / newState.peakBalance else 0.0
+        // 4. 计算当前回撤
+        val currentDrawDown = if (newState.peakBalance > 0) (newState.currentBalance - newState.peakBalance) / newState.peakBalance else 0.0
 
-        // 4. 核心逻辑：更新最大回撤 或 检查修复
-        if (currentDrawDown > newState.maxDrawDown) {
+        // 5. 核心逻辑：更新最大回撤 或 检查修复
+        if (currentDrawDown < newState.maxDrawDown) {
             // 发现更大的回撤：更新记录
             newState.maxDrawDown = currentDrawDown
             newState.maxDDPeakDate = newState.currentPeakDate
             newState.maxDDValleyDate = today.date
             newState.maxDDPeakValue = newState.peakBalance
 
-            // 既然创了新低，说明之前的“修复”已经无效
+            // 既然创了新低，说明之前的"修复"已经无效
             newState.maxDDRecoveryDate = null
-        } else if (newState.maxDDRecoveryDate == null && newState.maxDrawDown > 0) {
+        } else if (newState.maxDDRecoveryDate == null && newState.maxDrawDown < 0) {
             // 还没修复，检查今天是否爬出坑了
             if (newState.currentBalance >= newState.maxDDPeakValue) {
                 newState.maxDDRecoveryDate = today.date
