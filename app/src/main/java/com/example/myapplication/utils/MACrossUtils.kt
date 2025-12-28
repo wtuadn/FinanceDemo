@@ -49,13 +49,16 @@ object MACrossUtils {
      * 获取当前交易信号
      */
     fun getTradeSignal(symbol: SymbolData): TradeSignalData? {
-        val history = Utils.getSinaKLineData(symbol.copy(scale = 240), datalen = (symbol.longMA * 3).coerceAtLeast(50))
-        Thread.sleep(Random.nextLong(100, 500))
+        val history = Utils.getSinaKLineData(symbol.copy(scale = 240), datalen = (symbol.longMA * 3).coerceAtLeast(100))
+        Thread.sleep(Random.nextLong(200, 300))
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
         val kLineData = if (history.lastOrNull()?.date?.startsWith(lastest.firstOrNull()?.date ?: "") == true) {
             history + lastest
         } else {
             history
+        }
+        if (kLineData.isEmpty()) {
+            return TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty")
         }
         return calculateMACross(symbol, kLineData).latestTradeSignalData
     }
@@ -158,6 +161,7 @@ object MACrossUtils {
                     calculateMAData(kLineData, symbol.longMA)
                 )
             }
+
             MAType.EMA -> {
                 Pair(
                     calculateEMAData(kLineData, symbol.shortMA),
@@ -191,7 +195,6 @@ object MACrossUtils {
             // 如果是第一次买入，记录初始本金
             if (newState.buyBalance == null) {
                 newState.buyBalance = newState.currentBalance / changeRatio
-                newState.maxLossFromBuyStartDate = today.date // 记录买入日期作为可能的最大损失开始日期
             }
 
             // 计算从买入时的本金开始的损失率
@@ -201,10 +204,7 @@ object MACrossUtils {
             if (lossFromBuy < newState.maxLossFromBuy) {
                 newState.maxLossFromBuy = lossFromBuy
                 newState.maxLossFromBuyDate = today.date
-                // 如果是首次达到最大损失，记录开始日期
-                if (newState.maxLossFromBuy == 0.0) {
-                    newState.maxLossFromBuyStartDate = today.date
-                }
+                newState.maxLossFromBuyStartDate = buyData.date
                 // 既然创了新低，之前的修复记录失效
                 newState.maxLossFromBuyRecoveryDate = null
             } else if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {

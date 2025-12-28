@@ -18,15 +18,17 @@ data class MaxDrawDownData(
 ) {
 
     override fun toString(): String {
-        var string = "最大回撤:${Utils.getPercentageString(maxDrawDownRate)}" +
-            " 持续天数:${(Utils.dateToTimestamp(valleyDate) - Utils.dateToTimestamp(peakDate)) / (24 * 60 * 60)} $peakDate - $valleyDate"
+        var string = "最大回撤:${Utils.getPercentageString(maxDrawDownRate)}"
+        if (maxDrawDownRate < 0) {
+            string += " 持续天数:${(Utils.dateToTimestamp(valleyDate) - Utils.dateToTimestamp(peakDate)) / (24 * 60 * 60)} $peakDate - $valleyDate"
+        }
         if (recoveryDate == null) {
             string += " 修复时间:修复中"
         } else {
             string += " 修复时间:${(Utils.dateToTimestamp(recoveryDate) - Utils.dateToTimestamp(valleyDate)) / (24 * 60 * 60)} $valleyDate - $recoveryDate"
         }
         string += "\n最大本金损失率:${Utils.getPercentageString(maxLossFromBuyRate)}"
-        if (maxLossFromBuyRate > 0) {
+        if (maxLossFromBuyRate < 0) {
             string += " 持续天数:${(Utils.dateToTimestamp(maxLossFromBuyDate) - Utils.dateToTimestamp(maxLossFromBuyStartDate)) / (24 * 60 * 60)} $maxLossFromBuyStartDate - $maxLossFromBuyDate"
         }
         if (maxLossFromBuyRecoveryDate == null) {
