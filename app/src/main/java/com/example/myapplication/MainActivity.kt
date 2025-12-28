@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -187,7 +188,7 @@ class MainActivity : ComponentActivity() {
                             itemsIndexed(symbolItemStates) { index, item ->
                                 SymbolRow(
                                     index = index,
-                                    itemState = item,
+                                    initItemState = item,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp),
@@ -293,10 +294,11 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun SymbolRow(
         index: Int,
-        itemState: SymbolItemState,
+        initItemState: SymbolItemState,
         modifier: Modifier = Modifier,
         onClick: (() -> Unit)? = null,
     ) {
+        var itemState by remember(initItemState) { mutableStateOf(initItemState) }
         val symbol = itemState.symbolData
 
         Card(
@@ -332,7 +334,7 @@ class MainActivity : ComponentActivity() {
                     if (itemState.tradeSignalData != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = itemState.tradeSignalData.date,
+                            text = itemState.tradeSignalData!!.date,
                             fontSize = 12.sp,
                             color = itemState.getTradeTextColor(),
                             fontWeight = FontWeight.Bold,
@@ -341,9 +343,23 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // 右侧状态和信号显示区域
+                            val scope = rememberCoroutineScope()
                 Box(
-                    modifier = Modifier.size(56.dp), // 固定大小
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.size(56.dp) // 固定大小
+                        .clickable{
+                            scope.launch {
+                                fetchTradeSignalsSequentially(
+                                    initialList = listOf(symbol),
+                                    onUpdate = { updatedList ->
+                                        itemState = updatedList.first()
+                                    },
+                                    onComplete = {
+                                    }
+                                )
+
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (itemState.isLoading) {
                         // 状态 1: 正在加载

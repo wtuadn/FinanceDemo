@@ -146,8 +146,13 @@ object Utils {
             json = runCatching { File("data", "${symbol.code}.${symbol.d}.json").readText() }.getOrNull()
         }
         if (json.isNullOrEmpty()) {
+            val scale = if (symbol.scale == 240) {
+                symbol.scale * symbol.d
+            } else {
+                symbol.scale
+            }
             val api =
-                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.code}&scale=${symbol.scale * symbol.d}&ma=no&datalen=$datalen"
+                "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.code}&scale=${scale}&ma=no&datalen=$datalen"
             json = httpGet(
                 urlString = api,
                 // headMap = mapOf("Referer" to "https://finance.sina.com.cn", "host" to "hq.sinajs.cn")
@@ -241,5 +246,5 @@ object Utils {
         }
     }
 
-    val httpDelay: Long get() = Random.nextLong(100, 200)
+    val httpDelay: Long get() = Random.nextLong(200, 300)
 }
