@@ -1,5 +1,6 @@
 package com.example.myapplication.utils
 
+import UserAgentProvider
 import com.example.myapplication.data.AlignedMAData
 import com.example.myapplication.data.KLineData
 import com.example.myapplication.data.MAData
@@ -13,6 +14,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.random.Random
 
 object Utils {
     fun calculateAlignedMAData(
@@ -206,10 +208,7 @@ object Utils {
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000 // 连接超时 (毫秒)
             connection.readTimeout = 5000    // 读取超时 (毫秒)
-            connection.setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-            )
+            connection.setRequestProperty("User-Agent", UserAgentProvider.getRandomUserAgent())
             headMap?.forEach {
                 connection.setRequestProperty(it.key, it.value)
             }
@@ -241,4 +240,6 @@ object Utils {
             connection?.disconnect()
         }
     }
+
+    val httpDelay: Long get() = Random.nextLong(100, 200)
 }

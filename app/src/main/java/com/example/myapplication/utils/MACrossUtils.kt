@@ -12,7 +12,6 @@ import com.example.myapplication.data.TradeSignal
 import com.example.myapplication.data.TradeSignalData
 import kotlin.math.pow
 import kotlin.math.round
-import kotlin.random.Random
 
 /**
  * Created by wtuadn on 2025/12/15.
@@ -50,7 +49,7 @@ object MACrossUtils {
      */
     fun getTradeSignal(symbol: SymbolData): TradeSignalData? {
         val history = Utils.getSinaKLineData(symbol.copy(scale = 240), datalen = (symbol.longMA * 3).coerceAtLeast(100))
-        Thread.sleep(Random.nextLong(200, 300))
+        Thread.sleep(Utils.httpDelay)
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
         val kLineData = if (history.lastOrNull()?.date?.startsWith(lastest.firstOrNull()?.date ?: "") == true) {
             history + lastest

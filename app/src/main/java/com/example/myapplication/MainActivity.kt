@@ -54,7 +54,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.random.Random
 
 // 辅助扩展函数：将日期字符串转换为时间戳（假设日期格式是 YYYY-MM-DD）
 fun String.toTimestamp(): Long {
@@ -284,7 +283,7 @@ class MainActivity : ComponentActivity() {
                 withContext(Dispatchers.Main) {
                     onUpdate(mutableList.toList())
                 }
-                delay(Random.nextLong(200, 300))
+                delay(Utils.httpDelay)
             }
             onComplete()
         }
@@ -312,23 +311,26 @@ class MainActivity : ComponentActivity() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    // 第一行：基础信息
                     Text(
                         text = "${index + 1}.${symbol.code} ${symbol.desc}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    // 第二行：参数信息
                     Text(
-                        text = "d=${symbol.d} mdd=${Utils.getPercentageString(symbol.mdd)}" +
-                            "\ncountlyPercentage=${Utils.getPercentageString(symbol.countlyPercentage)}" +
+                        text = "d=${symbol.d} mdd=${Utils.getPercentageString(symbol.mdd)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = itemState.getTradeTextColor(),
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "countlyPercentage=${Utils.getPercentageString(symbol.countlyPercentage)}" +
                             "\ndailyPercentage=${Utils.getPercentageString(symbol.dailyPercentage)}",
                         fontSize = 12.sp,
                     )
                     if (itemState.tradeSignalData != null) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        // 第三行：交易日期信息
                         Text(
                             text = itemState.tradeSignalData.date,
                             fontSize = 12.sp,
