@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.view.WindowCompat
 import com.example.myapplication.data.SymbolData
 import com.example.myapplication.data.TradeSignal
 import com.example.myapplication.data.TradeSignalData
@@ -152,11 +153,12 @@ class MainActivity : ComponentActivity() {
         SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
         SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
     ).sortedByDescending { it.countlyPercentage }
-    // .subList(0,1)
+        // .subList(0, 1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = true
         setContent {
             MyApplicationTheme {
                 val coroutineScope = rememberCoroutineScope()
@@ -249,11 +251,11 @@ class MainActivity : ComponentActivity() {
     private suspend fun fetchTradeSignalsSequentially(
         initialList: List<SymbolData>,
         onUpdate: (List<SymbolItemState>) -> Unit,
-        onComplete: () -> Unit
+        onComplete: () -> Unit,
     ) {
         val mutableList = initialList.map { SymbolItemState(it) }.toMutableList()
         // 初始更新，清除之前所有状态
-        onUpdate(mutableList)
+        onUpdate(mutableList.toList())
 
         withContext(Dispatchers.IO) {
             for (index in initialList.indices) {
@@ -343,10 +345,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // 右侧状态和信号显示区域
-                            val scope = rememberCoroutineScope()
+                val scope = rememberCoroutineScope()
                 Box(
-                    modifier = Modifier.size(56.dp) // 固定大小
-                        .clickable{
+                    modifier = Modifier
+                        .size(56.dp) // 固定大小
+                        .clickable {
                             scope.launch {
                                 fetchTradeSignalsSequentially(
                                     initialList = listOf(symbol),
