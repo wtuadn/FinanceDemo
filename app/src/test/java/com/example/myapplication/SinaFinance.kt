@@ -66,7 +66,7 @@ class SinaFinance {
         // calculateBestMAArgs(symbols.first())
         // symbols.forEach { calculateSpecificMAArg(it) }
         // calculateBestMAArgs(SymbolData("sz002594", "比亚迪", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
-        queryTradeSignal(listOf(SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000)))
+        queryTradeSignal(symbols)
         // calculateSpecificMAArg(SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
 
         println()
@@ -75,7 +75,7 @@ class SinaFinance {
     private fun queryTradeSignal(symbols: List<SymbolData>) {
         symbols.forEach {
             val tradeSignalData = MACrossUtils.getTradeSignal(it)
-            println(tradeSignalData)
+            println("${it.code} ${it.desc} ${tradeSignalData}}")
             Thread.sleep(Random.nextLong(100, 500))
         }
     }

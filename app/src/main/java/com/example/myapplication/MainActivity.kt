@@ -61,7 +61,7 @@ import java.io.InputStreamReader
 fun String.toTimestamp(): Long {
     // 实际应用中应该使用 SimpleDateFormat 或 DateTimeFormatter
     // 此处简化处理：假设格式正确
-    val parts = this.split("-").map { it.toLong() }
+    val parts = this.replace(" ", "-").split("-").map { it.toLongOrNull() ?: 0L }
     // 转换为一个可以排序的数字，如 YYYYMMDD
     return parts[0] * 10000 + parts[1] * 100 + parts[2]
 }
@@ -74,7 +74,7 @@ data class SymbolItemState(
     val isCompleted: Boolean = false, // 加载已完成
 ) {
     val shouldShowSignal: Boolean = tradeSignalData != null
-    val isTodaySignal: Boolean = tradeSignalData?.date == Utils.timestampToDate(System.currentTimeMillis() / 1000)
+    val isTodaySignal: Boolean = tradeSignalData?.date?.startsWith(Utils.timestampToDate(System.currentTimeMillis() / 1000)) == true
     val isBuySignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.BUY
     val isSellSignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.SELL
 
@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
         SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
         SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
     ).sortedByDescending { it.countlyPercentage }
-        // .subList(0, 1)
+        // .subList(10, 20)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
