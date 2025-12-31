@@ -52,8 +52,10 @@ object MACrossUtils {
         Thread.sleep(Utils.httpDelay)
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
         val kLineData = if (history.isNotEmpty() && lastest.isNotEmpty()) {
-            if (lastest.last().date.startsWith(history.first().date)) {
-                history //同一天不合并
+            if (symbol.d == 1 && Utils.isSameDay(history.last().date, lastest.last().date)) {
+                history.dropLast(1) + lastest // 用最新数据替换掉最末尾的
+            } else if (symbol.d == 5 && Utils.isSameWeek(history.last().date, lastest.last().date)) {
+                history.dropLast(1) + lastest // 用最新数据替换掉最末尾的
             } else {
                 history + lastest //不是同一天，把最新数据合并过来
             }

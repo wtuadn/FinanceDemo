@@ -12,6 +12,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import kotlin.random.Random
@@ -130,6 +131,26 @@ object Utils {
         val date = formatter.parse(dateString)
         val timestampMillis = date!!.time
         return timestampMillis / 1000L
+    }
+
+    fun isSameDay(date1: String, date2: String): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("GMT+08:00")
+        val date1Obj = formatter.parse(date1)
+        val date2Obj = formatter.parse(date2)
+        return date1Obj?.time == date2Obj?.time
+    }
+
+    fun isSameWeek(date1: String, date2: String): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("GMT+08:00")
+        val date1Obj = formatter.parse(date1)
+        val date2Obj = formatter.parse(date2)
+        val calendar1 = Calendar.getInstance()
+        val calendar2 = Calendar.getInstance()
+        calendar1.time = date1Obj!!
+        calendar2.time = date2Obj!!
+        return calendar1.get(Calendar.WEEK_OF_YEAR) == calendar2.get(Calendar.WEEK_OF_YEAR) && calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)
     }
 
     fun findBestKLineDataList(kLineData: List<KLineData>): List<KLineData> {
