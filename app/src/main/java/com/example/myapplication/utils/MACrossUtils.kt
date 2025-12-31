@@ -51,10 +51,14 @@ object MACrossUtils {
         val history = Utils.getSinaKLineData(symbol.copy(scale = 240), datalen = (symbol.longMA * 3).coerceAtLeast(200))
         Thread.sleep(Utils.httpDelay)
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
-        val kLineData = if (history.lastOrNull()?.date?.startsWith(lastest.firstOrNull()?.date ?: "") == true) {
-            history + lastest
+        val kLineData = if (history.isNotEmpty() && lastest.isNotEmpty()) {
+            if (lastest.last().date.startsWith(history.first().date)) {
+                history //同一天不合并
+            } else {
+                history + lastest //不是同一天，把最新数据合并过来
+            }
         } else {
-            history
+            emptyList()
         }
         if (kLineData.isEmpty()) {
             return TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty")

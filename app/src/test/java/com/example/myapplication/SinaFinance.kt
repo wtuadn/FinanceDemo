@@ -65,8 +65,8 @@ class SinaFinance {
 
         // calculateBestMAArgs(symbols.first())
         // symbols.forEach { calculateSpecificMAArg(it) }
-        // calculateBestMAArgs(SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
-        queryTradeSignal(listOf(SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012)))
+        // calculateBestMAArgs(SymbolData("sz002594", "比亚迪", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
+        queryTradeSignal(listOf(SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000)))
         // calculateSpecificMAArg(SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
 
         println()
