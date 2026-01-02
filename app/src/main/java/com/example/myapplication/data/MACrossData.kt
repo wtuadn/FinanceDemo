@@ -9,12 +9,12 @@ data class MACrossData(
     val enterData: AlignedMAData,
     val exitData: AlignedMAData,
 ){
-    val percentage: Double = (exitData.closePrice - enterData.closePrice) / enterData.closePrice
+    val percentage: Double = (exitData.kLineData.closePrice - enterData.kLineData.closePrice) / enterData.kLineData.closePrice
 
-    val dayCount :Int = ((Utils.dateToTimestamp(exitData.date) - Utils.dateToTimestamp(enterData.date)) / (24 * 60 * 60)).toInt()
+    val dayCount :Int = ((Utils.dateToTimestamp(exitData.kLineData.date) - Utils.dateToTimestamp(enterData.kLineData.date)) / (24 * 60 * 60)).toInt()
 
     override fun toString(): String {
-        return "${enterData.date}——${exitData.date} " +
+        return "${enterData.kLineData.date}——${exitData.kLineData.date} " +
             "涨幅: ${Utils.getPercentageString(percentage)} "
     }
 }

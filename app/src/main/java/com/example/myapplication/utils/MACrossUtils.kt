@@ -10,8 +10,7 @@ import com.example.myapplication.data.MaxDrawDownData
 import com.example.myapplication.data.SymbolData
 import com.example.myapplication.data.TradeSignal
 import com.example.myapplication.data.TradeSignalData
-import kotlin.math.pow
-import kotlin.math.round
+import java.math.RoundingMode
 
 /**
  * Created by wtuadn on 2025/12/15.
@@ -21,6 +20,7 @@ object MACrossUtils {
     enum class MAType {
         SMA,
         EMA,
+        OBV,
     }
 
     // --- Private Data Class for Drawdown State ---
@@ -89,7 +89,7 @@ object MACrossUtils {
         var latestTradeSignalData: TradeSignalData? = null
 
         var drawdownState = DrawdownState(
-            currentPeakDate = if (alignedMAData.isNotEmpty()) alignedMAData[0].date else ""
+            currentPeakDate = if (alignedMAData.isNotEmpty()) alignedMAData[0].kLineData.date else ""
         )
 
         // 4. 遍历数据 (从索引 1 开始，因为需要对比 yesterday)
@@ -116,21 +116,21 @@ object MACrossUtils {
                 downCrossDiffRate = symbol.downCrossDiffRate
             )
             if (buyData == null && newBuyData != null) {
-                latestTradeSignalData = TradeSignalData(TradeSignal.BUY, today.date)
+                latestTradeSignalData = TradeSignalData(TradeSignal.BUY, today.kLineData.date)
             } else if (buyData != null && newBuyData == null) {
-                latestTradeSignalData = TradeSignalData(TradeSignal.SELL, today.date)
+                latestTradeSignalData = TradeSignalData(TradeSignal.SELL, today.kLineData.date)
             }
             crossData = newCrossData
             buyData = newBuyData
         }
 
         // 5. 结果组装
-        val yearMap = crossDataList.groupBy { it.exitData.date.substring(0, 4).toInt() }
+        val yearMap = crossDataList.groupBy { it.exitData.kLineData.date.substring(0, 4).toInt() }
         return MACrossResult(
             totalCrossData = GroupedMACrossData("total:", crossDataList),
             yearCrossDataMap = linkedMapOf<Int, GroupedMACrossData>().apply {
                 // 确保年份按照 longMADataList 存在的年份填充，即使该年没有交易
-                longMADataList.map { it.date.substring(0, 4).toInt() }.distinct().forEach { year ->
+                longMADataList.map { it.kLineData.date.substring(0, 4).toInt() }.distinct().forEach { year ->
                     this[year] = GroupedMACrossData("$year", yearMap[year] ?: emptyList())
                 }
             },
@@ -173,6 +173,13 @@ object MACrossUtils {
                     calculateEMAData(kLineData, symbol.longMA)
                 )
             }
+
+            MAType.OBV -> {
+                Pair(
+                    calculateOBVMAData(kLineData, symbol.shortMA),
+                    calculateOBVMAData(kLineData, symbol.longMA)
+                )
+            }
         }
     }
 
@@ -190,7 +197,7 @@ object MACrossUtils {
         val newState = state.copy() // Work on a copy for cleaner state updates
 
         // 1. 如果昨天结束时持有仓位，今天的涨跌幅计入净值
-        val changeRatio = today.closePrice / yesterday.closePrice
+        val changeRatio = today.kLineData.closePrice / yesterday.kLineData.closePrice
         if (buyData != null) {
             newState.currentBalance *= changeRatio
         }
@@ -208,14 +215,14 @@ object MACrossUtils {
             // 更新买入后最大损失率
             if (lossFromBuy < newState.maxLossFromBuy) {
                 newState.maxLossFromBuy = lossFromBuy
-                newState.maxLossFromBuyDate = today.date
-                newState.maxLossFromBuyStartDate = buyData.date
+                newState.maxLossFromBuyDate = today.kLineData.date
+                newState.maxLossFromBuyStartDate = buyData.kLineData.date
                 // 既然创了新低，之前的修复记录失效
                 newState.maxLossFromBuyRecoveryDate = null
             } else if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
                 // 检查是否从最大损失中恢复（净值回到买入时的本金水平）
                 if (newState.currentBalance >= newState.buyBalance!!) {
-                    newState.maxLossFromBuyRecoveryDate = today.date
+                    newState.maxLossFromBuyRecoveryDate = today.kLineData.date
                 }
             }
         } else {
@@ -225,7 +232,7 @@ object MACrossUtils {
         // 3. 更新历史最高净值 (High Water Mark)
         if (newState.currentBalance > newState.peakBalance) {
             newState.peakBalance = newState.currentBalance
-            newState.currentPeakDate = today.date
+            newState.currentPeakDate = today.kLineData.date
         }
 
         // 4. 计算当前回撤
@@ -236,7 +243,7 @@ object MACrossUtils {
             // 发现更大的回撤：更新记录
             newState.maxDrawDown = currentDrawDown
             newState.maxDDPeakDate = newState.currentPeakDate
-            newState.maxDDValleyDate = today.date
+            newState.maxDDValleyDate = today.kLineData.date
             newState.maxDDPeakValue = newState.peakBalance
 
             // 既然创了新低，说明之前的"修复"已经无效
@@ -244,7 +251,7 @@ object MACrossUtils {
         } else if (newState.maxDDRecoveryDate == null && newState.maxDrawDown < 0) {
             // 还没修复，检查今天是否爬出坑了
             if (newState.currentBalance >= newState.maxDDPeakValue) {
-                newState.maxDDRecoveryDate = today.date
+                newState.maxDDRecoveryDate = today.kLineData.date
             }
         }
 
@@ -334,50 +341,8 @@ object MACrossUtils {
      * @return 包含日期和对应 MA 值的 MovingAverageData 列表。
      */
     fun calculateMAData(dataList: List<KLineData>, period: Int): List<MAData> {
-        if (period <= 0) {
-            throw IllegalArgumentException("均线周期 N 必须大于 0。")
-        }
-
-        // 提取所有收盘价，方便后续窗口计算
-        val prices = dataList.map { it.closePrice }
-        val maList = mutableListOf<MAData>()
-
-        // 遍历所有数据点
-        for (i in dataList.indices) {
-            val currentDate = dataList[i].date
-            val currentPrice = dataList[i].closePrice
-            val currentPriceStr = dataList[i].closePriceStr
-            val currentVolume = dataList[i].volume
-
-            // MA 计算的起始索引：必须向前追溯 (period - 1) 天
-            // 例如，计算 MA5，需要从 i 向前到 i - 4，一共 5 个点。
-            val startIndex = i - period + 1
-
-            // 1. 处理前 N-1 天数据：MA值设置为 null
-            if (startIndex < 0) {
-                maList.add(MAData(currentDate, currentPrice, currentVolume, null))
-                continue
-            }
-
-            // 2. 提取计算窗口内的 N 个收盘价
-            // Kotlin 的 subList 索引是 [fromIndex, toIndex)，所以 toIndex = i + 1
-            val windowPrices = prices.subList(startIndex, i + 1)
-
-            // 3. 计算总和
-            val sum = windowPrices.sum()
-
-            // 4. 计算平均值
-            val rawMa = sum / period
-
-            // 5. 根据当前价格的小数位数四舍五入
-            val decimalPlaces = currentPriceStr.substringAfter('.', "").length
-            val roundedMa = round(rawMa * 10.0.pow(decimalPlaces.toDouble())) / 10.0.pow(decimalPlaces.toDouble())
-
-            // 6. 添加到结果列表
-            maList.add(MAData(currentDate, currentPrice, currentVolume, roundedMa))
-        }
-
-        return maList
+        val ma1DataList = dataList.map { MAData(it, it.closePrice) }
+        return calculateMAValue(ma1DataList, period)
     }
 
     /**
@@ -388,9 +353,6 @@ object MACrossUtils {
      * @return 包含日期和对应 EMA 值的 MAData 列表。
      */
     fun calculateEMAData(dataList: List<KLineData>, period: Int): List<MAData> {
-        if (period <= 0) {
-            throw IllegalArgumentException("EMA周期 N 必须大于 0。")
-        }
         if (dataList.isEmpty()) {
             return emptyList()
         }
@@ -405,15 +367,12 @@ object MACrossUtils {
         var previousEma: Double? = null
 
         for (i in dataList.indices) {
-            val currentDate = dataList[i].date
-            val currentPrice = dataList[i].closePrice
-            val currentPriceStr = dataList[i].closePriceStr
-            val currentVolume = dataList[i].volume
+            val kLineData = dataList[i]
 
             // —————— 第一步：初始化（前 period-1 天无 EMA，设为 null）——————
             if (i < period - 1) {
                 // 前 N-1 天：EMA 未有效形成, MA值设置为 null
-                maList.add(MAData(currentDate, currentPrice, currentVolume, null))
+                maList.add(MAData(kLineData, null))
                 continue
             }
 
@@ -424,15 +383,104 @@ object MACrossUtils {
                 previousEma = sma
             } else {
                 // —————— 第三步：递推计算后续 EMA ——————
-                val ema = alpha * currentPrice + (1 - alpha) * previousEma!!
+                val ema = alpha * kLineData.closePrice + (1 - alpha) * previousEma!!
                 previousEma = ema
             }
 
-            // 四舍五入，与原始价格小数位一致
-            val decimalPlaces = currentPriceStr.substringAfter('.', "").length
-            val roundedEma = round(previousEma!! * 10.0.pow(decimalPlaces.toDouble())) / 10.0.pow(decimalPlaces.toDouble())
-            maList.add(MAData(currentDate, currentPrice, currentVolume, roundedEma))
+            // 四舍五入，保留3位小数
+            val roundedEma = previousEma.toBigDecimal()
+                .setScale(3, RoundingMode.HALF_UP)
+                .toDouble()
+            maList.add(MAData(kLineData, roundedEma))
         }
+        return maList
+    }
+
+    fun calculateOBVMAData(dataList: List<KLineData>, period: Int): List<MAData> {
+        val obvList = mutableListOf<MAData>()
+
+        // 第一天 OBV 设为 0.0
+        var currentOBV = 0.000
+
+        // 遍历所有数据点
+        for (i in 1 until dataList.size) {
+            val preKLineData = dataList[i - 1]
+            val kLineData = dataList[i]
+            val prevClose = preKLineData.closePrice
+            val currClose = kLineData.closePrice
+            val currVolume = kLineData.volume
+
+            // 检查数据有效性（可选增强健壮性）
+            if (prevClose < 0 || currClose < 0 || currVolume < 0) {
+                // 若数据无效，OBV 中断，继承上一日值
+                obvList.add(MAData(kLineData, value = currentOBV))
+                continue
+            }
+
+            // 根据收盘价变化更新 OBV
+            when {
+                currClose > prevClose -> currentOBV += currVolume.toDouble()
+                currClose < prevClose -> currentOBV -= currVolume.toDouble()
+                else -> {
+                    // 收盘价相等，OBV 不变
+                }
+            }
+            // 四舍五入，保留3位小数
+            val roundedMa = currentOBV.toBigDecimal()
+                .setScale(3, RoundingMode.HALF_UP)
+                .toDouble()
+
+            // 6. 添加到结果列表
+            obvList.add(MAData(kLineData, roundedMa))
+        }
+
+        return calculateMAValue(obvList, period)
+    }
+
+    /**
+     * 计算均线数据
+     */
+    private fun calculateMAValue(ma1DataList: List<MAData>, period: Int): List<MAData> {
+        if (period == 1) {
+            return ma1DataList
+        }
+
+        val values = ma1DataList.map { it.value ?: 0.0 }
+        val maList = mutableListOf<MAData>()
+
+        // 遍历所有数据点
+        for (i in ma1DataList.indices) {
+            val kLineData = ma1DataList[i].kLineData
+
+            // MA 计算的起始索引：必须向前追溯 (period - 1) 天
+            // 例如，计算 MA5，需要从 i 向前到 i - 4，一共 5 个点。
+            val startIndex = i - period + 1
+
+            // 1. 处理前 N-1 天数据：MA值设置为 null
+            if (startIndex < 0) {
+                maList.add(MAData(kLineData, null))
+                continue
+            }
+
+            // 2. 提取计算窗口内的 N 个收盘价
+            // Kotlin 的 subList 索引是 [fromIndex, toIndex)，所以 toIndex = i + 1
+            val windowValues = values.subList(startIndex, i + 1)
+
+            // 3. 计算总和
+            val sum = windowValues.sum()
+
+            // 4. 计算平均值
+            val rawMa = sum / period
+
+            // 四舍五入，保留3位小数
+            val roundedMa = rawMa.toBigDecimal()
+                .setScale(3, RoundingMode.HALF_UP)
+                .toDouble()
+
+            // 6. 添加到结果列表
+            maList.add(MAData(kLineData, roundedMa))
+        }
+
         return maList
     }
 }

@@ -17,8 +17,8 @@ class YahooFinance {
     @Test
     fun main() {
         // val symbol = "159201.SZ" //华夏国证自由现金流
-        val symbol = "515450.SS" //南方红利低波50
-        // val symbol = "159915.SZ" //易方达创业板ETF
+        // val symbol = "515450.SS" //南方红利低波50
+        val symbol = "159915.SZ" //易方达创业板ETF
         val startDate = "2012-01-01"
         val endDate = "2025-12-31"
         val st = Utils.dateToTimestamp(startDate)
@@ -69,7 +69,7 @@ class YahooFinance {
                 resultList.add(
                     KLineData(
                         date = dateStr,
-                        closePriceStr = closeArray.optString(i)
+                        closePrice = closeArray.optDouble(i, -1.0)
                     )
                 )
             }
@@ -79,7 +79,7 @@ class YahooFinance {
             return emptyList()
         }
 
-        return Utils.findLongestNonNullSublist(resultList)
+        return Utils.findLongestSublist(resultList) { it.closePrice > 0 }
     }
 
     /**

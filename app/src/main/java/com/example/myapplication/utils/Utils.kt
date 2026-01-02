@@ -22,15 +22,13 @@ object Utils {
         shortMADataList: List<MAData>,
         longMADataList: List<MAData>,
     ): List<AlignedMAData> {
-        return shortMADataList.mapIndexedNotNull { index, ma1 ->
-            val ma2 = longMADataList.getOrNull(index)
-            if (ma1.value != null && ma2?.value != null && ma1.date == ma2.date) {
+        return shortMADataList.mapIndexedNotNull { index, shortMAData ->
+            val longMAData = longMADataList.getOrNull(index)
+            if (shortMAData.value != null && longMAData?.value != null && shortMAData.kLineData.date == longMAData.kLineData.date) {
                 AlignedMAData(
-                    ma1.date,
-                    ma1.closePrice,
-                    ma1.volume,
-                    ma1.value,
-                    ma2.value,
+                    shortMAData.kLineData,
+                    shortMAData.value,
+                    longMAData.value,
                 )
             } else {
                 null
@@ -51,8 +49,10 @@ object Utils {
         return "次数：${upCount + downCount} 胜率：$rate"
     }
 
-    fun findLongestNonNullSublist(dataList: List<KLineData>): List<KLineData> {
-        // if (true) return dataList
+    /**
+     * 找到最长连续满足条件的数据
+     */
+    fun findLongestSublist(dataList: List<KLineData>, condition: (KLineData) -> Boolean): List<KLineData> {
         // 用于记录当前连续非 null 子列表的起始索引
         var currentStartIndex = 0
 
@@ -68,7 +68,7 @@ object Utils {
         // 遍历整个列表
         for (i in dataList.indices) {
             val data = dataList[i]
-            if (data.closePrice > 0) {
+            if (condition.invoke(data)) {
                 // 如果当前元素不为 -1
                 if (currentLength == 0) {
                     // 如果是新一轮连续的开始
@@ -103,6 +103,19 @@ object Utils {
 
         // 如果没有找到非 null 元素，则返回空列表
         return emptyList()
+    }
+
+
+    /**
+     * 找到最新连续满足条件的数据
+     */
+    fun findLatestSublist(dataList: List<KLineData>, condition: (KLineData) -> Boolean): List<KLineData> {
+        val kLineData = dataList.findLast { !condition(it) }
+        return if (kLineData != null) {
+            dataList.subList(dataList.indexOf(kLineData), dataList.size)
+        } else {
+            dataList
+        }
     }
 
     /**
@@ -205,8 +218,10 @@ object Utils {
                 resultList.add(
                     KLineData(
                         date = jsonObject.optString("day"),
-                        openPriceStr = jsonObject.optString("open"),
-                        closePriceStr = jsonObject.optString("close"),
+                        openPrice = jsonObject.optDouble("open", -1.0),
+                        highPrice = jsonObject.optDouble("high", -1.0),
+                        lowPrice = jsonObject.optDouble("low", -1.0),
+                        closePrice = jsonObject.optDouble("close", -1.0),
                         volume = jsonObject.optLong("volume")
                     )
                 )
@@ -216,7 +231,7 @@ object Utils {
             e.printStackTrace()
             return emptyList()
         }
-        return findLongestNonNullSublist(resultList)
+        return findLongestSublist(resultList) { it.closePrice > 0 }
     }
 
     /**
