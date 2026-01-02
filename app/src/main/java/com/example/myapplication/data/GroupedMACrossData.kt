@@ -13,6 +13,7 @@ data class GroupedMACrossData(
     val victoryRate: Double = if (totalCount == 0) 0.0 else crossDataList.count { it.percentage > 0 }.toDouble() / totalCount
     val totalPercentage: Double = if (totalCount == 0) 0.0 else crossDataList.sumOf { it.percentage }
     val countlyPercentage: Double = if (totalCount == 0) 0.0 else totalPercentage / totalCount
+    val dailyPercentage: Double = if (totalCount == 0) 0.0 else totalPercentage / crossDataList.sumOf { it.dayCount }
     val maxPercentage: Double = if (totalCount == 0) 0.0 else crossDataList.maxOf { if (it.percentage > 0) it.percentage else 0.0 }
     val minPercentage: Double = if (totalCount == 0) 0.0 else crossDataList.minOf { if (it.percentage < 0) it.percentage else 0.0 }
 

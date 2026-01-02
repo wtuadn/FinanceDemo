@@ -14,7 +14,7 @@ data class MACrossResult(
 
     fun getTotalDesc(): String {
         val countlyPercentage = totalCrossData.countlyPercentage
-        val dailyPercentage = totalCrossData.totalPercentage / totalCrossData.crossDataList.sumOf { it.dayCount }
+        val dailyPercentage = totalCrossData.dailyPercentage
         val yearlyPercentage = totalCrossData.totalPercentage / yearCrossDataMap.size
         val totalStr = totalCrossData.toString()
         val insert = totalCrossData.groupKey.length + 1

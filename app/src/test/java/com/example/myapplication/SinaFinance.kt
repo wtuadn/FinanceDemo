@@ -19,6 +19,7 @@ import kotlin.random.Random
  */
 class SinaFinance {
     private val symbols = listOf(
+        SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
         SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
         SymbolData("sh516510", "云计算ETF", 240, 5, 1, 25, MAType.SMA, 0.170, 0.000, 0.213, 0.0012, 0.000),
@@ -63,9 +64,9 @@ class SinaFinance {
     @Test
     fun main() {
 
-        calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
+        // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
         // symbols.forEach { calculateSpecificMAArg(it) }
-        // calculateBestMAArgs(SymbolData("sz002594", "比亚迪", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
+        calculateBestMAArgs(SymbolData("sz159928", "消费ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
         // queryTradeSignal(symbols)
         // calculateSpecificMAArg(SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000))
         // checkVolumes(symbols)
@@ -98,14 +99,14 @@ class SinaFinance {
     private fun calculateBestMAArgs(symbol: SymbolData) {
         val list = mutableListOf<Pair<MACrossResult, String>>()
         val scale = 240
-        listOf(1/*, 5*/).forEach { d ->
+        listOf(1, 5).forEach { d ->
             symbol.d = d
             var kLineData = Utils.getSinaKLineData(symbol, findBestData = false, useLocalData = true, datalen = 10000)
             kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
             // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
-            kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
             println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
-            listOf(MAType.SMA, MAType.EMA, MAType.OBV).forEach { maType ->
+            listOf(MAType.SMA, MAType.EMA/*, MAType.OBV*/).forEach { maType ->
                 listOf(1, 5, 10, 15, 20, 25, 30).forEach { shortMA ->
                     listOf(5, 10, 15, 20, 25, 30, 40, 60, 120, 180).forEach { longMA ->
                         if (shortMA >= longMA) return@forEach
@@ -132,6 +133,7 @@ class SinaFinance {
                                 )
                                 symbol.apply {
                                     countlyPercentage = result.totalCrossData.countlyPercentage
+                                    dailyPercentage = result.totalCrossData.dailyPercentage
                                     mdd = result.maxDrawDownData.maxLossFromBuyRate
                                 }
                                 list.add(result to getArgStr(symbol))
@@ -171,12 +173,10 @@ class SinaFinance {
 
     private fun getArgStr(symbol: SymbolData): String =
         "--- 参数：code=\"${symbol.code}\",desc=\"${symbol.desc}\",scale=${symbol.scale},d=${symbol.d},shortMA=${symbol.shortMA},longMA=${symbol.longMA},maType=MAType.${symbol.maType}" +
-            ",upCrossDiffRate=${String.format("%.3f", symbol.upCrossDiffRate)},downCrossDiffRate=${
-                String.format(
-                    "%.3f",
-                    symbol.downCrossDiffRate
-                )
-            },countlyPercentage=${String.format("%.3f", symbol.countlyPercentage)},mdd=${String.format("%.3f", symbol.mdd)}),"
+            ",upCrossDiffRate=${String.format("%.3f", symbol.upCrossDiffRate)},downCrossDiffRate=${String.format("%.3f", symbol.downCrossDiffRate)}" +
+            ",countlyPercentage=${String.format("%.3f", symbol.countlyPercentage)}" +
+            ",dailyPercentage=${String.format("%.4f", symbol.dailyPercentage)}" +
+            ",mdd=${String.format("%.3f", symbol.mdd)}),"
 
     private fun calculateSpecificMAArg(
         symbol: SymbolData,

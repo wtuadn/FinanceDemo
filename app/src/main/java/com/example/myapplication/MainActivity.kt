@@ -57,62 +57,9 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-// 辅助扩展函数：将日期字符串转换为时间戳（假设日期格式是 YYYY-MM-DD）
-fun String.toTimestamp(): Long {
-    // 实际应用中应该使用 SimpleDateFormat 或 DateTimeFormatter
-    // 此处简化处理：假设格式正确
-    val parts = this.replace(" ", "-").split("-").map { it.toLongOrNull() ?: 0L }
-    // 转换为一个可以排序的数字，如 YYYYMMDD
-    return parts[0] * 10000 + parts[1] * 100 + parts[2]
-}
-
-// 1. 新的数据状态类：包含 Symbol 数据、信号结果，以及当前的加载状态
-data class SymbolItemState(
-    val symbolData: SymbolData,
-    val tradeSignalData: TradeSignalData? = null,
-    val isLoading: Boolean = false, // 正在加载中
-    val isCompleted: Boolean = false, // 加载已完成
-) {
-    val shouldShowSignal: Boolean = tradeSignalData != null
-    val isTodaySignal: Boolean = tradeSignalData?.date?.startsWith(Utils.timestampToDate(System.currentTimeMillis() / 1000)) == true
-    val isBuySignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.BUY
-    val isSellSignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.SELL
-
-    // 用于排序：今天有信号 > 有信号 > 无信号。信号越新越靠前。
-    fun getSortPriority(): Long {
-        if (isError()) {
-            return Long.MAX_VALUE
-        }
-        return if (isTodaySignal) {
-            tradeSignalData!!.date.toTimestamp() + (symbolData.countlyPercentage * 100000).toLong()
-        } else if (tradeSignalData != null) {
-            tradeSignalData.date.toTimestamp()
-        } else {
-            // 0 表示没有信号，排在时间戳后面
-            0L
-        }
-    }
-
-    fun getTradeTextColor(): Color = if (isTodaySignal) {
-        when {
-            isBuySignal -> Color.Red // 红色
-            isSellSignal -> Color.Green // 绿色
-            else -> Color.Unspecified
-        }
-    } else if (isError()) {
-        Color.Red
-    } else {
-        Color.Unspecified
-    }
-
-    private fun isError(): Boolean {
-        return tradeSignalData?.date?.contains("empty", ignoreCase = true) == true
-    }
-}
-
 class MainActivity : ComponentActivity() {
-    // 原始数据列表（假设来自某个地方）
     private val symbols = listOf(
+        SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
         SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
         SymbolData("sh516510", "云计算ETF", 240, 5, 1, 25, MAType.SMA, 0.170, 0.000, 0.213, 0.0012, 0.000),
@@ -153,7 +100,7 @@ class MainActivity : ComponentActivity() {
         SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
         SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
     ).sortedByDescending { it.countlyPercentage }
-        // .subList(10, 20)
+    // .subList(10, 20)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -460,4 +407,57 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+}
+
+// 1. 新的数据状态类：包含 Symbol 数据、信号结果，以及当前的加载状态
+data class SymbolItemState(
+    val symbolData: SymbolData,
+    val tradeSignalData: TradeSignalData? = null,
+    val isLoading: Boolean = false, // 正在加载中
+    val isCompleted: Boolean = false, // 加载已完成
+) {
+    val shouldShowSignal: Boolean = tradeSignalData != null
+    val isTodaySignal: Boolean = tradeSignalData?.date?.startsWith(Utils.timestampToDate(System.currentTimeMillis() / 1000)) == true
+    val isBuySignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.BUY
+    val isSellSignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.SELL
+
+    // 用于排序：今天有信号 > 有信号 > 无信号。信号越新越靠前。
+    fun getSortPriority(): Long {
+        if (isError()) {
+            return Long.MAX_VALUE
+        }
+        return if (isTodaySignal) {
+            tradeSignalData!!.date.toTimestamp() + (symbolData.countlyPercentage * 100000).toLong()
+        } else if (tradeSignalData != null) {
+            tradeSignalData.date.toTimestamp()
+        } else {
+            // 0 表示没有信号，排在时间戳后面
+            0L
+        }
+    }
+
+    fun getTradeTextColor(): Color = if (isTodaySignal) {
+        when {
+            isBuySignal -> Color.Red // 红色
+            isSellSignal -> Color.Green // 绿色
+            else -> Color.Unspecified
+        }
+    } else if (isError()) {
+        Color.Red
+    } else {
+        Color.Unspecified
+    }
+
+    private fun isError(): Boolean {
+        return tradeSignalData?.date?.contains("empty", ignoreCase = true) == true
+    }
+
+    // 辅助扩展函数：将日期字符串转换为时间戳（假设日期格式是 YYYY-MM-DD）
+    private fun String.toTimestamp(): Long {
+        // 实际应用中应该使用 SimpleDateFormat 或 DateTimeFormatter
+        // 此处简化处理：假设格式正确
+        val parts = this.replace(" ", "-").split("-").map { it.toLongOrNull() ?: 0L }
+        // 转换为一个可以排序的数字，如 YYYYMMDD
+        return parts[0] * 10000 + parts[1] * 100 + parts[2]
+    }
 }

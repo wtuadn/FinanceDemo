@@ -1,3 +1,9 @@
+--- 参数：code="sz159928",desc="消费ETF",scale=240,d=5,shortMA=5,longMA=15,maType=MAType.SMA,upCrossDiffRate=0.150,downCrossDiffRate=-0.040,countlyPercentage=0.717,dailyPercentage=0.0014,mdd=0.000),
+total: 平均次涨幅：71.67% 平均天涨幅：0.14% 平均年涨幅：14.33% 总次数: 2 胜率: 100.00% 涨幅: 143.33% 单次最大涨幅: 114.37% 单次最大回撤: 0.00%
+最大回撤:-21.58% 持续天数:37 2021-02-10 - 2021-03-19 修复时间:修复中
+最大本金损失率:0.00% 修复时间:修复中
+2017-06-16——2018-04-04 涨幅: 28.96%
+2019-03-08——2021-03-26 涨幅: 114.37%
 
 --- 参数：code="sz159869",desc="游戏ETF",scale=240,d=1,shortMA=10,longMA=20,maType=MAType.SMA,upCrossDiffRate=0.170,downCrossDiffRate=-0.150,countlyPercentage=0.251,dailyPercentage=0.0015,mdd=-0.036),
 total: 平均次涨幅：25.08% 平均天涨幅：0.15% 平均年涨幅：10.03% 总次数: 2 胜率: 100.00% 涨幅: 50.15% 单次最大涨幅: 33.84% 单次最大回撤: 0.00%
