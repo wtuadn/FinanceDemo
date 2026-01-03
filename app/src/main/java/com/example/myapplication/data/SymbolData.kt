@@ -13,13 +13,14 @@ data class SymbolData(
     var d: Int = 1,
     var shortMA: Int = 1,
     var longMA: Int = 20,
+    var extN: Int = 0, // kdj rsv或者macd signalPeriod
     var maType: MAType = MAType.SMA,
     var upCrossDiffRate: Double = 0.000,
     var downCrossDiffRate: Double = 0.000,
     var countlyPercentage: Double = 0.0, // 平均次涨幅
     var dailyPercentage: Double = 0.0, // 平均天涨幅
     var mdd: Double = 0.0, // 最大本金损失率
-){
+) {
     override fun toString(): String {
         return "code=$code, " +
             "desc=$desc, " +
@@ -27,6 +28,7 @@ data class SymbolData(
             "d=$d, " +
             "shortMA=$shortMA, " +
             "longMA=$longMA, " +
+            "extN=$extN, " +
             "maType=$maType, " +
             "upCrossDiffRate=${Utils.getPercentageString(upCrossDiffRate)}, " +
             "downCrossDiffRate=${Utils.getPercentageString(downCrossDiffRate)}, " +

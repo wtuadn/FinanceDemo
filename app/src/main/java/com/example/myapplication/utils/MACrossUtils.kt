@@ -11,6 +11,8 @@ import com.example.myapplication.data.SymbolData
 import com.example.myapplication.data.TradeSignal
 import com.example.myapplication.data.TradeSignalData
 import java.math.RoundingMode
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Created by wtuadn on 2025/12/15.
@@ -21,6 +23,8 @@ object MACrossUtils {
         SMA,
         EMA,
         OBV,
+        SKDJ,
+        MACD,
     }
 
     // --- Private Data Class for Drawdown State ---
@@ -68,6 +72,8 @@ object MACrossUtils {
         return calculateMACross(symbol, kLineData).latestTradeSignalData
     }
 
+    private val cachedAlignedMADataMap = mutableMapOf<String, List<AlignedMAData>>()
+
     /**
      * 计算均线交叉策略，包含最大回撤和修复时间计算
      */
@@ -75,12 +81,24 @@ object MACrossUtils {
         symbol: SymbolData,
         kLineData: List<KLineData>,
     ): MACrossResult {
-
-        // 1. 计算长短均线
-        val (shortMADataList, longMADataList) = calculateMADataLists(kLineData, symbol)
-
-        // 2. 对齐数据（确保日期匹配，过滤掉无效的 null 值）
-        val alignedMAData = Utils.calculateAlignedMAData(shortMADataList, longMADataList)
+        val cacheKey = "${symbol.code}-${symbol.shortMA}-${symbol.longMA}-${symbol.maType}-${symbol.d}-${symbol.extN}"
+        val alignedMAData: List<AlignedMAData> = cachedAlignedMADataMap[cacheKey] ?: run {
+            when (symbol.maType) {
+                MAType.SKDJ -> {
+                    calculateSKDJData(kLineData, symbol.extN, symbol.shortMA, symbol.longMA)
+                }
+                MAType.MACD -> {
+                    calculateMACDData(kLineData, symbol.longMA, symbol.shortMA, symbol.extN)
+                }
+                else -> {
+                    // 1. 计算长短均线
+                    val (shortMADataList, longMADataList) = calculateMADataLists(kLineData, symbol)
+                    // 2. 对齐数据（确保日期匹配，过滤掉无效的 null 值）
+                    Utils.calculateAlignedMAData(shortMADataList, longMADataList)
+                }
+            }
+        }
+        cachedAlignedMADataMap[cacheKey] = alignedMAData
 
         // 3. 策略与回撤计算变量初始化
         val crossDataList = mutableListOf<MACrossData>()
@@ -107,13 +125,12 @@ object MACrossUtils {
             // Part B: 交易信号逻辑 (均线交叉)
             // ==========================================
             val (newCrossData, newBuyData) = handleTradingSignal(
+                symbol = symbol,
                 today = today,
                 yesterday = yesterday,
                 crossData = crossData,
                 buyData = buyData,
                 crossDataList = crossDataList,
-                upCrossDiffRate = symbol.upCrossDiffRate,
-                downCrossDiffRate = symbol.downCrossDiffRate
             )
             if (buyData == null && newBuyData != null) {
                 latestTradeSignalData = TradeSignalData(TradeSignal.BUY, today.kLineData.date)
@@ -130,7 +147,7 @@ object MACrossUtils {
             totalCrossData = GroupedMACrossData("total:", crossDataList),
             yearCrossDataMap = linkedMapOf<Int, GroupedMACrossData>().apply {
                 // 确保年份按照 longMADataList 存在的年份填充，即使该年没有交易
-                longMADataList.map { it.kLineData.date.substring(0, 4).toInt() }.distinct().forEach { year ->
+                alignedMAData.map { it.kLineData.date.substring(0, 4).toInt() }.distinct().forEach { year ->
                     this[year] = GroupedMACrossData("$year", yearMap[year] ?: emptyList())
                 }
             },
@@ -180,6 +197,8 @@ object MACrossUtils {
                     calculateOBVMAData(kLineData, symbol.longMA)
                 )
             }
+
+            else -> throw IllegalArgumentException("Invalid MA type: ${symbol.maType}")
         }
     }
 
@@ -264,13 +283,12 @@ object MACrossUtils {
      * @return A Pair containing the updated crossData (potential cross point) and buyData (current position).
      */
     private fun handleTradingSignal(
+        symbol: SymbolData,
         today: AlignedMAData,
         yesterday: AlignedMAData,
         crossData: AlignedMAData?,
         buyData: AlignedMAData?,
         crossDataList: MutableList<MACrossData>, // Mutated by this function
-        upCrossDiffRate: Double,
-        downCrossDiffRate: Double,
     ): Pair<AlignedMAData?, AlignedMAData?> {
         var newCrossData = crossData
         var newBuyData = buyData
@@ -310,9 +328,8 @@ object MACrossUtils {
         // 2. 执行买入逻辑 (Check Buy Signal)
         if (newBuyData == null) {
             // 条件：(刚上穿且超过阈值) OR (上穿后某天超过阈值)
-            val isJustCrossedUp = yesterday.shortMAValue < yesterday.longMAValue && todayMADiffRate >= upCrossDiffRate
-            val isAfterCrossedUp = todayCrossDayMADiffRate != null && todayCrossDayMADiffRate >= upCrossDiffRate
-
+            val isJustCrossedUp = yesterday.shortMAValue < yesterday.longMAValue && todayMADiffRate >= symbol.upCrossDiffRate
+            val isAfterCrossedUp = todayCrossDayMADiffRate != null && todayCrossDayMADiffRate >= symbol.upCrossDiffRate
             if (isJustCrossedUp || isAfterCrossedUp) {
                 newBuyData = today // 执行买入
             }
@@ -320,12 +337,10 @@ object MACrossUtils {
         // 3. 执行卖出逻辑 (Check Sell Signal)
         else {
             // 条件：(刚下穿且超过阈值) OR (下穿后某天超过阈值)
-            val isJustCrossedDown = yesterday.shortMAValue > yesterday.longMAValue && todayMADiffRate <= downCrossDiffRate
-            val isAfterCrossedDown = todayCrossDayMADiffRate != null && todayCrossDayMADiffRate <= downCrossDiffRate
-
+            val isJustCrossedDown = yesterday.shortMAValue > yesterday.longMAValue && todayMADiffRate <= symbol.downCrossDiffRate
+            val isAfterCrossedDown = todayCrossDayMADiffRate != null && todayCrossDayMADiffRate <= symbol.downCrossDiffRate
             if (isJustCrossedDown || isAfterCrossedDown) {
-                val exitData = today
-                crossDataList.add(MACrossData(newBuyData, exitData)) // 记录一次完整交易
+                crossDataList.add(MACrossData(newBuyData, today)) // 记录一次完整交易
                 newBuyData = null // 清空持仓，变为空仓
             }
         }
@@ -388,9 +403,7 @@ object MACrossUtils {
             }
 
             // 四舍五入，保留3位小数
-            val roundedEma = previousEma.toBigDecimal()
-                .setScale(3, RoundingMode.HALF_UP)
-                .toDouble()
+            val roundedEma = previousEma.roundTo3Decimals()
             maList.add(MAData(kLineData, roundedEma))
         }
         return maList
@@ -426,9 +439,7 @@ object MACrossUtils {
                 }
             }
             // 四舍五入，保留3位小数
-            val roundedMa = currentOBV.toBigDecimal()
-                .setScale(3, RoundingMode.HALF_UP)
-                .toDouble()
+            val roundedMa = currentOBV.roundTo3Decimals()
 
             // 6. 添加到结果列表
             obvList.add(MAData(kLineData, roundedMa))
@@ -473,14 +484,257 @@ object MACrossUtils {
             val rawMa = sum / period
 
             // 四舍五入，保留3位小数
-            val roundedMa = rawMa.toBigDecimal()
-                .setScale(3, RoundingMode.HALF_UP)
-                .toDouble()
+            val roundedMa = rawMa.roundTo3Decimals()
 
             // 6. 添加到结果列表
             maList.add(MAData(kLineData, roundedMa))
         }
 
         return maList
+    }
+
+    /**
+     * 根据 KLineData 列表计算 SKDJ (慢速随机指标)
+     *
+     * 计算逻辑：
+     * 1. KDJ: 原始 K -> 快K; 原始 D -> 快D (即快K的平滑)
+     * 2. SKDJ: 慢K = 快D; 慢D = 对慢K进行M2周期平滑
+     *
+     * @param dataList 原始 K 线数据列表（必须按日期升序排列）
+     * @param n RSV 计算周期，默认 9
+     * @param m1 K 值平滑周期，默认 3 (用于计算原始 K 值)
+     * @param m2 D 值平滑周期，默认 3 (用于计算原始 D 值 和 慢 D 值)
+     * @return List<AlignedMAData>，其中：
+     * - shortMAValue = 慢 K 值 (SK)
+     * - longMAValue = 慢 D 值 (SD)
+     * - jValue = 慢 J 值 (SJ)
+     */
+    fun calculateSKDJData(
+        dataList: List<KLineData>,
+        n: Int = 9,
+        m1: Int = 3,
+        m2: Int = 3,
+    ): List<AlignedMAData> {
+        if (dataList.isEmpty()) {
+            return emptyList()
+        }
+
+        val size = dataList.size
+
+        // 存储 KDJ 计算过程中的 RSV 和 K 值 (快线 K)
+        val rsv = DoubleArray(size) { Double.NaN }
+        val fastKValues = DoubleArray(size) { Double.NaN }
+
+        // 存储 SKDJ 最终需要的 K 值和 D 值 (慢 K 和 慢 D)
+        val slowKValues = DoubleArray(size) { Double.NaN } // SK，即原 KDJ 的 D 值
+        val slowDValues = DoubleArray(size) { Double.NaN } // SD，即慢 K 的平滑
+
+        // --- Part 1: 计算原始 RSV ---
+        for (i in (n - 1) until size) {
+            var highestHigh = Double.MIN_VALUE
+            var lowestLow = Double.MAX_VALUE
+
+            for (j in i - n + 1..i) {
+                highestHigh = max(highestHigh, dataList[j].highPrice)
+                lowestLow = min(lowestLow, dataList[j].lowPrice)
+            }
+
+            rsv[i] = if (highestHigh != lowestLow) {
+                100.0 * (dataList[i].closePrice - lowestLow) / (highestHigh - lowestLow)
+            } else {
+                // 当价格持平时，RSV 通常定义为 100 或 0，这里选择 0.0
+                0.0
+            }
+        }
+
+        // --- Part 2: 计算 KDJ 的 K 值 (Fast K) 和 D 值 (Fast D / Slow K) ---
+        // Fast K = RSV 的 M1 周期平滑
+        // Fast D (即 Slow K) = Fast K 的 M2 周期平滑
+
+        // 初始值：通常设定 K0=D0=50 或取第一个 RSV 的值
+        var prevFastK = 50.0
+        var prevSlowK = 50.0 // 慢 K 的前值，即快 D 的前值
+
+        for (i in (n - 1) until size) {
+            val currentRsv = rsv[i]
+
+            // 1. 计算 Fast K (快 K)
+            // K = (prevK * (M1 - 1) + RSV) / M1
+            val currentFastK = if (i == n - 1) {
+                currentRsv // 第一个 K 值初始化
+            } else {
+                (prevFastK * (m1 - 1) + currentRsv) / m1
+            }
+
+            // 2. 计算 Slow K (慢 K, 实际上是 KDJ 中的 D 值)
+            // Slow K = (prevSlowK * (M2 - 1) + Fast K) / M2
+            val currentSlowK = if (i == n - 1) {
+                currentFastK // 第一个 D 值初始化
+            } else {
+                (prevSlowK * (m2 - 1) + currentFastK) / m2
+            }
+
+            fastKValues[i] = currentFastK // 暂存备用
+            slowKValues[i] = currentSlowK // 慢 K 值 (SK)
+
+            prevFastK = currentFastK
+            prevSlowK = currentSlowK
+        }
+
+        // --- Part 3: 计算 Slow D (慢 D) ---
+        // Slow D = Slow K 的 M2 周期平滑
+
+        var prevSlowD = 50.0 // 慢 D 的前值，通常设为 50 或第一个慢 K 值
+
+        for (i in (n - 1) until size) {
+            val currentSlowK = slowKValues[i]
+
+            // Slow D = (prevSlowD * (M2 - 1) + Slow K) / M2
+            val currentSlowD = if (i == n - 1) {
+                currentSlowK // 第一个慢 D 值初始化为第一个慢 K 值
+            } else {
+                (prevSlowD * (m2 - 1) + currentSlowK) / m2
+            }
+
+            slowDValues[i] = currentSlowD // 慢 D 值 (SD)
+            prevSlowD = currentSlowD
+        }
+
+        // --- Part 4: 构建结果 (SK, SD, SJ) ---
+        val result = mutableListOf<AlignedMAData>()
+        for (i in dataList.indices) {
+            val kLine = dataList[i]
+
+            val sk = if (i >= n - 1) slowKValues[i].roundTo3Decimals() else 0.0
+            val sd = if (i >= n - 1) slowDValues[i].roundTo3Decimals() else 0.0
+
+            // 慢 J 值 (SJ) = 3 * SK - 2 * SD
+            val sj = if (sk != 0.0 || sd != 0.0) {
+                (3 * sk - 2 * sd).roundTo3Decimals()
+            } else {
+                0.0
+            }
+
+            val aligned = AlignedMAData(
+                kLineData = kLine,
+                shortMAValue = sk, // 对应慢 K (SK)
+                longMAValue = sd   // 对应慢 D (SD)
+            )
+            aligned.extValue = sj    // 对应慢 J (SJ)
+            result.add(aligned)
+        }
+
+        return result
+    }
+
+    /**
+     * 根据 KLineData 列表计算 MACD 指标。
+     *
+     * @param dataList 原始 K 线数据列表（必须按日期升序排列）
+     * @param fastPeriod 短周期（通常 12）
+     * @param slowPeriod 长周期（通常 26）
+     * @param signalPeriod DIF 平滑周期（通常 9）
+     * @return List<AlignedMAData>，其中：
+     * - shortMAValue = DIF 值 (快线)
+     * - longMAValue = DEA 值 (慢线)
+     * - jValue = MACD Bar 柱状图值 (2 * (DIF - DEA))
+     */
+    fun calculateMACDData(
+        dataList: List<KLineData>,
+        fastPeriod: Int = 12,
+        slowPeriod: Int = 26,
+        signalPeriod: Int = 9,
+    ): List<AlignedMAData> {
+        if (dataList.isEmpty() || slowPeriod > dataList.size) {
+            return emptyList()
+        }
+
+        val size = dataList.size
+        val closePrices = dataList.map { it.closePrice }
+
+        // --- Step 1: 计算 Fast EMA (短周期 EMA) ---
+        val fastEMA = calculateEMA(closePrices, fastPeriod)
+
+        // --- Step 2: 计算 Slow EMA (长周期 EMA) ---
+        val slowEMA = calculateEMA(closePrices, slowPeriod)
+
+        // --- Step 3: 计算 DIF (离差值 / 快线) ---
+        val difValues = DoubleArray(size) { Double.NaN }
+        for (i in 0 until size) {
+            // DIF = Fast EMA - Slow EMA
+            difValues[i] = fastEMA[i] - slowEMA[i]
+        }
+
+        // --- Step 4: 计算 DEA (平滑离差 / 慢线) ---
+        // DEA 是 DIF 的 Signal 周期 EMA
+        // 注意：这里的 EMA 计算应该从 DIF 序列开始。
+        val deaValues = calculateEMA(difValues.toList(), signalPeriod)
+
+        // --- Step 5: 构建结果 (DIF, DEA, MACD Bar) ---
+        val result = mutableListOf<AlignedMAData>()
+
+        // 从长周期 (slowPeriod) 开始，指标值才相对稳定。
+        val validStartIndex = slowPeriod - 1
+
+        for (i in dataList.indices) {
+            val kLine = dataList[i]
+
+            val dif = if (i >= validStartIndex) difValues[i].roundTo3Decimals() else 0.0
+            val dea = if (i >= validStartIndex) deaValues[i].roundTo3Decimals() else 0.0
+
+            // MACD Bar = 2 * (DIF - DEA)
+            val macdBar = if (i >= validStartIndex) {
+                (2.0 * (difValues[i] - deaValues[i])).roundTo3Decimals()
+            } else {
+                0.0
+            }
+
+            val aligned = AlignedMAData(
+                kLineData = kLine,
+                shortMAValue = dif,      // 对应 DIF (快线)
+                longMAValue = dea        // 对应 DEA (慢线)
+            )
+            aligned.extValue = macdBar     // 对应 MACD Bar (柱状图)
+            result.add(aligned)
+        }
+
+        return result
+    }
+
+    /**
+     * 辅助函数：计算指定周期的指数移动平均 (EMA)。
+     * EMA 的权重系数（平滑因子）为: 2 / (period + 1)
+     *
+     * @param dataList 原始数据点列表 (通常是收盘价)
+     * @param period EMA 周期
+     * @return 包含 EMA 值的 DoubleArray，与输入列表大小相同
+     */
+    private fun calculateEMA(dataList: List<Double>, period: Int): DoubleArray {
+        val size = dataList.size
+        if (size == 0) return DoubleArray(0)
+
+        val emaValues = DoubleArray(size) { Double.NaN }
+        // 平滑因子：2 / (N + 1)
+        val alpha = 2.0 / (period + 1)
+
+        // 第一个 EMA 值等于第一个数据点的值
+        var currentEMA = dataList[0]
+        emaValues[0] = currentEMA
+
+        // 从第二个数据点开始迭代计算
+        for (i in 1 until size) {
+            val price = dataList[i]
+            // EMA_t = alpha * Price_t + (1 - alpha) * EMA_{t-1}
+            currentEMA = alpha * price + (1.0 - alpha) * currentEMA
+            emaValues[i] = currentEMA
+        }
+        return emaValues
+    }
+
+    // 辅助函数：四舍五入保留3位小数
+    private fun Double.roundTo3Decimals(): Double {
+        return toBigDecimal()
+            .setScale(3, RoundingMode.HALF_UP)
+            .toDouble()
     }
 }

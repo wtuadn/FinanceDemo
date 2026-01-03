@@ -19,71 +19,69 @@ import kotlin.random.Random
  */
 class SinaFinance {
     private val symbols = listOf(
-        SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
-        SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
-        SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
-        SymbolData("sh516510", "云计算ETF", 240, 5, 1, 25, MAType.SMA, 0.170, 0.000, 0.213, 0.0012, 0.000),
-        SymbolData("sz159998", "计算机ETF", 240, 5, 1, 25, MAType.EMA, 0.090, -0.020, 0.088, 0.0006, 0.000),
-        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, MAType.EMA, 0.180, -0.020, 0.146, 0.0044, 0.000),
-        SymbolData("sh601398", "工商银行", 240, 5, 15, 20, MAType.SMA, 0.140, 0.000, 0.130, 0.0006, -0.004),
-        SymbolData("sh600036", "招商银行", 240, 1, 20, 30, MAType.SMA, 0.070, -0.050, 0.378, 0.0009, -0.015),
-        SymbolData("sh513120", "港服创新药ETF", 240, 1, 1, 20, MAType.SMA, 0.160, -0.030, 0.140, 0.0018, -0.014),
-        SymbolData("sh515790", "光伏ETF", 240, 1, 15, 40, MAType.SMA, 0.130, 0.000, 0.179, 0.0022, 0.000),
-        SymbolData("sh513550", "港股通50ETF", 240, 5, 20, 25, MAType.SMA, 0.080, 0.000, 0.204, 0.0018, 0.000),
-        SymbolData("sh512710", "军工龙头ETF", 240, 1, 1, 10, MAType.EMA, 0.140, -0.020, 0.121, 0.0035, -0.036),
-        SymbolData("sz159227", "航空航天ETF", 240, 1, 5, 10, MAType.SMA, 0.010, -0.010, 0.028, 0.0007, -0.018),
-        SymbolData("sz159218", "卫星产业ETF", 240, 1, 5, 10, MAType.EMA, 0.030, 0.000, 0.033, 0.0012, -0.007),
-        SymbolData("sz159813", "半导体ETF", 240, 1, 30, 40, MAType.SMA, 0.200, 0.000, 0.064, 0.0010, -0.005),
-        SymbolData("sz159713", "稀土ETF", 240, 1, 20, 25, MAType.EMA, 0.120, 0.000, 0.184, 0.0021, 0.000),
-        SymbolData("sz159985", "豆粕ETF", 240, 5, 1, 15, MAType.EMA, 0.000, -0.130, 0.335, 0.0004, 0.000),
-        SymbolData("sh561330", "矿业ETF", 240, 1, 30, 40, MAType.SMA, 0.170, 0.000, 0.215, 0.0029, 0.000),
-        SymbolData("sh513400", "道琼斯ETF", 240, 1, 25, 40, MAType.SMA, 0.050, 0.000, 0.056, 0.0005, -0.006),
-        SymbolData("sh510230", "金融ETF", 240, 1, 1, 10, MAType.SMA, 0.120, 0.000, 0.052, 0.0034, 0.000),
-        SymbolData("sz159851", "金融科技ETF", 240, 5, 10, 20, MAType.SMA, 0.060, 0.000, 0.243, 0.0017, 0.000),
-        SymbolData("sh516860", "金融科技ETF", 240, 5, 5, 20, MAType.EMA, 0.060, -0.040, 0.265, 0.0008, 0.000),
-        SymbolData("sh512010", "医药ETF", 240, 5, 20, 25, MAType.SMA, 0.170, 0.000, 0.273, 0.0007, 0.000),
-        SymbolData("sz159766", "旅游ETF", 240, 1, 20, 25, MAType.SMA, 0.130, 0.000, 0.026, 0.0027, -0.003),
-        SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000),
-        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 10, 30, MAType.SMA, 0.160, -0.030, 0.209, 0.0028, 0.000),
-        SymbolData("sh588220", "科创100ETF基金", 240, 1, 1, 40, MAType.EMA, 0.060, 0.000, 0.166, 0.0023, 0.000),
-        SymbolData("sh588000", "科创50ETF", 240, 5, 1, 5, MAType.EMA, 0.160, 0.000, 0.073, 0.0012, 0.000),
-        SymbolData("sz159755", "电池ETF", 240, 1, 1, 20, MAType.EMA, 0.160, 0.000, 0.167, 0.0035, 0.000),
-        SymbolData("sh513090", "香港证券ETF", 240, 1, 1, 5, MAType.EMA, 0.140, -0.020, 0.153, 0.0060, -0.009),
-        SymbolData("sh562500", "机器人ETF", 240, 5, 1, 5, MAType.SMA, 0.080, -0.010, 0.071, 0.0012, -0.019),
-        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018),
-        SymbolData("sh515050", "5G通信ETF", 240, 1, 20, 25, MAType.SMA, 0.200, 0.000, 0.225, 0.0058, -0.041),
-        SymbolData("sh513820", "港股红利ETF", 240, 5, 1, 5, MAType.SMA, 0.010, 0.000, 0.096, 0.0014, 0.000),
-        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 1, 5, MAType.SMA, 0.000, -0.030, 0.128, 0.0010, -0.004),
-        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 10, 15, MAType.SMA, 0.010, 0.000, 0.083, 0.0011, -0.006),
-        SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012),
-        SymbolData("sz159892", "恒生医药ETF", 240, 5, 1, 5, MAType.SMA, 0.120, 0.000, 0.097, 0.0015, -0.014),
-        SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
-        SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
+        SymbolData("sz159883", "医疗器械ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
+        SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
+        SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, 0, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
+        SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
+        SymbolData("sh516510", "云计算ETF", 240, 5, 1, 25, 0, MAType.SMA, 0.170, 0.000, 0.213, 0.0012, 0.000),
+        SymbolData("sz159998", "计算机ETF", 240, 5, 1, 25, 0, MAType.EMA, 0.090, -0.020, 0.088, 0.0006, 0.000),
+        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.180, -0.020, 0.146, 0.0044, 0.000),
+        SymbolData("sh601398", "工商银行", 240, 5, 15, 20, 0, MAType.SMA, 0.140, 0.000, 0.130, 0.0006, -0.004),
+        SymbolData("sh600036", "招商银行", 240, 1, 20, 30, 0, MAType.SMA, 0.070, -0.050, 0.378, 0.0009, -0.015),
+        SymbolData("sh513120", "港股创新药ETF", 240, 1, 1, 20, 0, MAType.SMA, 0.160, -0.030, 0.140, 0.0018, -0.014),
+        SymbolData("sh515790", "光伏ETF", 240, 1, 15, 40, 0, MAType.SMA, 0.130, 0.000, 0.179, 0.0022, 0.000),
+        SymbolData("sh513550", "港股通50ETF", 240, 5, 20, 25, 0, MAType.SMA, 0.080, 0.000, 0.204, 0.0018, 0.000),
+        SymbolData("sh512710", "军工龙头ETF", 240, 1, 1, 10, 0, MAType.EMA, 0.140, -0.020, 0.121, 0.0035, -0.036),
+        SymbolData("sz159227", "航空航天ETF", 240, 1, 17, 20, 8, MAType.SKDJ, 0.010, -0.020, 0.073, 0.0012, -0.009),
+        SymbolData("sz159218", "卫星产业ETF", 240, 1, 5, 10, 0, MAType.EMA, 0.030, 0.000, 0.033, 0.0012, -0.007),
+        SymbolData("sz159813", "半导体ETF", 240, 1, 30, 40, 0, MAType.SMA, 0.200, 0.000, 0.064, 0.0010, -0.005),
+        SymbolData("sz159713", "稀土ETF", 240, 1, 20, 25, 0, MAType.EMA, 0.120, 0.000, 0.184, 0.0021, 0.000),
+        SymbolData("sz159985", "豆粕ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.000, -0.130, 0.335, 0.0004, 0.000),
+        SymbolData("sh561330", "矿业ETF", 240, 1, 30, 40, 0, MAType.SMA, 0.170, 0.000, 0.215, 0.0029, 0.000),
+        SymbolData("sh513400", "道琼斯ETF", 240, 1, 12, 14, 14, MAType.SKDJ, 0.020, -0.020, 0.094, 0.0010, -0.037),
+        SymbolData("sh510230", "金融ETF", 240, 1, 1, 10, 0, MAType.SMA, 0.120, 0.000, 0.052, 0.0034, 0.000),
+        SymbolData("sz159851", "金融科技ETF", 240, 5, 10, 20, 0, MAType.SMA, 0.060, 0.000, 0.243, 0.0017, 0.000),
+        SymbolData("sh516860", "金融科技ETF", 240, 5, 5, 20, 0, MAType.EMA, 0.060, -0.040, 0.265, 0.0008, 0.000),
+        SymbolData("sh512010", "医药ETF", 240, 5, 20, 25, 0, MAType.SMA, 0.170, 0.000, 0.273, 0.0007, 0.000),
+        SymbolData("sz159766", "旅游ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.130, 0.000, 0.026, 0.0027, -0.003),
+        SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, 0, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000),
+        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 10, 30, 0, MAType.SMA, 0.160, -0.030, 0.209, 0.0028, 0.000),
+        SymbolData("sh588220", "科创100ETF基金", 240, 1, 1, 40, 0, MAType.EMA, 0.060, 0.000, 0.166, 0.0023, 0.000),
+        SymbolData("sh588000", "科创50ETF", 240, 5, 1, 5, 0, MAType.EMA, 0.160, 0.000, 0.073, 0.0012, 0.000),
+        SymbolData("sz159755", "电池ETF", 240, 1, 1, 20, 0, MAType.EMA, 0.160, 0.000, 0.167, 0.0035, 0.000),
+        SymbolData("sh513090", "香港证券ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.140, -0.020, 0.153, 0.0060, -0.009),
+        SymbolData("sh562500", "机器人ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.080, -0.010, 0.071, 0.0012, -0.019),
+        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018),
+        SymbolData("sh515050", "5G通信ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.200, 0.000, 0.225, 0.0058, -0.041),
+        SymbolData("sh513820", "港股红利ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.010, 0.000, 0.096, 0.0014, 0.000),
+        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.000, -0.030, 0.128, 0.0010, -0.004),
+        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 10, 15, 0, MAType.SMA, 0.010, 0.000, 0.083, 0.0011, -0.006),
+        SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, 0, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012),
+        SymbolData("sz159892", "恒生医药ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.120, 0.000, 0.097, 0.0015, -0.014),
+        SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, 0, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
+        SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
     )
 
     @Test
     fun main() {
-
+        // calculateBestMAArgs(symbols[2])
+        // calculateBestSKDJArgs(symbols[2])
+        // calculateBestMACDArgs(symbols[0])
         // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
+        calculateBestSKDJArgs(symbols.find { it.desc == "黄金ETF" }!!)
         // symbols.forEach { calculateSpecificMAArg(it) }
-        calculateBestMAArgs(SymbolData("sz159928", "消费ETF", 240, 5, 30, 40, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012))
+        // calculateBestMAArgs(SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateSpecificMAArg(
+        //     SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018).copy(
+        //         maType = MAType.MACD,
+        //         d = 1,
+        //         extN = 9,
+        //         shortMA = 12,
+        //         longMA = 26
+        //     )
+        // )
         // queryTradeSignal(symbols)
-        // calculateSpecificMAArg(SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000))
-        // checkVolumes(symbols)
         println()
-    }
-
-    private fun checkVolumes(symbols: List<SymbolData>) {
-        symbols
-            // .find { it.code == "sz159869" }?.also {
-            .forEach { symbol ->
-                val kLineData = Utils.getSinaKLineData(symbol.copy(d = 1), findBestData = false, useLocalData = true, datalen = 10000)
-                kLineData.filter { it.volume <= 0 }.map { it.date }.takeIf { it.isNotEmpty() }?.also {
-                    println("${symbol.code} ${symbol.desc} $it")
-                }
-                // val volumeList = Utils.findLongestClosePriceSublist(kLineData, checkVolume = true)
-                // println("${symbol.code} ${symbol.desc} ${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ${volumeList.firstOrNull()?.date} - ${volumeList.lastOrNull()?.date}")
-            }
     }
 
     private fun queryTradeSignal(symbols: List<SymbolData>) {
@@ -93,6 +91,82 @@ class SinaFinance {
                 val tradeSignalData = MACrossUtils.getTradeSignal(it)
                 println("${it.code} ${it.desc} ${tradeSignalData}}")
                 Thread.sleep(Random.nextLong(100, 500))
+            }
+    }
+
+    private fun calculateBestSKDJArgs(symbol: SymbolData) {
+        val list = mutableListOf<Pair<MACrossResult, String>>()
+        val scale = 240
+        listOf(1).forEach { d ->
+            symbol.d = d
+            var kLineData = Utils.getSinaKLineData(symbol, findBestData = false, useLocalData = true, datalen = 10000)
+            kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
+            // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
+            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
+            listOf(MAType.SKDJ).forEach { maType ->
+                (5..20).toList().forEach { rsv ->
+                    (8..20).toList().forEach { shortMA ->
+                        (8..20).toList().forEach { longMA ->
+                            val start = 0.0
+                            val end = 0.0201
+                            val step = 0.01
+                            var upCrossDiffRate = start
+                            var downCrossDiffRate = start
+                            // 使用 while 循环进行浮点数步进迭代
+                            while (upCrossDiffRate <= end) {
+                                while (downCrossDiffRate >= -end) {
+                                    val result = MACrossUtils.calculateMACross(
+                                        symbol = symbol.also {
+                                            it.scale = scale
+                                            it.d = d
+                                            it.extN = rsv
+                                            it.shortMA = shortMA
+                                            it.longMA = longMA
+                                            it.maType = maType
+                                            it.upCrossDiffRate = upCrossDiffRate
+                                            it.downCrossDiffRate = downCrossDiffRate
+                                        },
+                                        kLineData = kLineData,
+                                    )
+                                    symbol.apply {
+                                        countlyPercentage = result.totalCrossData.countlyPercentage
+                                        dailyPercentage = result.totalCrossData.dailyPercentage
+                                        mdd = result.maxDrawDownData.maxLossFromBuyRate
+                                    }
+                                    list.add(result to getArgStr(symbol))
+                                    downCrossDiffRate -= step
+                                }
+                                upCrossDiffRate += step
+                                downCrossDiffRate = start
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list.removeAll { it.first.totalCrossData.countlyPercentage < 0.01 } //过滤掉单次收益太低的
+        list.removeAll { it.first.totalCrossData.totalCount < 2 } //过滤掉操作次数太少的
+        // list.removeAll { it.first.totalCrossData.totalCount > 20 } //过滤掉操作次数太多的
+        list.removeAll { it.first.totalCrossData.totalCount == 0 || it.first.totalCrossData.totalPercentage <= 0.0 }
+        // println("\n\n最小本金损失优先")
+        // repeat(2) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        // list.sortedWith(
+        //     compareByDescending<Pair<MACrossResult, String>> {
+        //         it.first.maxDrawDownData.maxLossFromBuyRate
+        //     }.thenByDescending {
+        //         it.first.totalCrossData.totalPercentage
+        //     }
+        // ).subList(0, 20.coerceAtMost(list.size))
+        //     .forEach {
+        //         println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
+        //     }
+        println("\n\n收益优先")
+        repeat(10) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        list.sortedByDescending { it.first.totalCrossData.totalPercentage }
+            .subList(0, 10.coerceAtMost(list.size))
+            .forEach {
+                println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
             }
     }
 
@@ -172,7 +246,7 @@ class SinaFinance {
     }
 
     private fun getArgStr(symbol: SymbolData): String =
-        "--- 参数：code=\"${symbol.code}\",desc=\"${symbol.desc}\",scale=${symbol.scale},d=${symbol.d},shortMA=${symbol.shortMA},longMA=${symbol.longMA},maType=MAType.${symbol.maType}" +
+        "--- 参数：code=\"${symbol.code}\",desc=\"${symbol.desc}\",scale=${symbol.scale},d=${symbol.d},shortMA=${symbol.shortMA},longMA=${symbol.longMA},extN=${symbol.extN},maType=MAType.${symbol.maType}" +
             ",upCrossDiffRate=${String.format("%.3f", symbol.upCrossDiffRate)},downCrossDiffRate=${String.format("%.3f", symbol.downCrossDiffRate)}" +
             ",countlyPercentage=${String.format("%.3f", symbol.countlyPercentage)}" +
             ",dailyPercentage=${String.format("%.4f", symbol.dailyPercentage)}" +
@@ -183,11 +257,89 @@ class SinaFinance {
     ) {
         var kLineData = Utils.getSinaKLineData(symbol, findBestData = false, useLocalData = true, datalen = 10000)
         kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
+        kLineData = kLineData.takeLast(50)
         val result = MACrossUtils.calculateMACross(
             symbol = symbol,
             kLineData = kLineData,
         )
         println("\n${getArgStr(symbol)} \n${result.getTotalDesc()} \n${result.totalCrossData.crossDataList.joinToString("\n")}")
+    }
+
+    private fun calculateBestMACDArgs(symbol: SymbolData) {
+        val list = mutableListOf<Pair<MACrossResult, String>>()
+        val scale = 240
+        listOf(1).forEach { d ->
+            symbol.d = d
+            var kLineData = Utils.getSinaKLineData(symbol, findBestData = false, useLocalData = true, datalen = 10000)
+            kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
+            // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
+            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
+            listOf(MAType.MACD).forEach { maType ->
+                (10..20).toList().forEach { shortMA ->
+                    (20..40).toList().forEach { longMA ->
+                        if (shortMA >= longMA) return@forEach
+                        (8..20).toList().forEach { extN ->
+                            val start = 0.0
+                            val end = 0.0001
+                            val step = 0.01
+                            var upCrossDiffRate = start
+                            var downCrossDiffRate = start
+                            // 使用 while 循环进行浮点数步进迭代
+                            while (upCrossDiffRate <= end) {
+                                while (downCrossDiffRate >= -end) {
+                                    val result = MACrossUtils.calculateMACross(
+                                        symbol = symbol.also {
+                                            it.scale = scale
+                                            it.d = d
+                                            it.extN = extN
+                                            it.shortMA = shortMA
+                                            it.longMA = longMA
+                                            it.maType = maType
+                                            it.upCrossDiffRate = upCrossDiffRate
+                                            it.downCrossDiffRate = downCrossDiffRate
+                                        },
+                                        kLineData = kLineData,
+                                    )
+                                    symbol.apply {
+                                        countlyPercentage = result.totalCrossData.countlyPercentage
+                                        dailyPercentage = result.totalCrossData.dailyPercentage
+                                        mdd = result.maxDrawDownData.maxLossFromBuyRate
+                                    }
+                                    list.add(result to getArgStr(symbol))
+                                    downCrossDiffRate -= step
+                                }
+                                upCrossDiffRate += step
+                                downCrossDiffRate = start
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list.removeAll { it.first.totalCrossData.countlyPercentage < 0.01 } //过滤掉单次收益太低的
+        list.removeAll { it.first.totalCrossData.totalCount < 2 } //过滤掉操作次数太少的
+        // list.removeAll { it.first.totalCrossData.totalCount > 20 } //过滤掉操作次数太多的
+        list.removeAll { it.first.totalCrossData.totalCount == 0 || it.first.totalCrossData.totalPercentage <= 0.0 }
+        // println("\n\n最小本金损失优先")
+        // repeat(2) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        // list.sortedWith(
+        //     compareByDescending<Pair<MACrossResult, String>> {
+        //         it.first.maxDrawDownData.maxLossFromBuyRate
+        //     }.thenByDescending {
+        //         it.first.totalCrossData.totalPercentage
+        //     }
+        // ).subList(0, 20.coerceAtMost(list.size))
+        //     .forEach {
+        //         println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
+        //     }
+        println("\n\n收益优先")
+        repeat(10) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        list.sortedByDescending { it.first.totalCrossData.totalPercentage }
+            .subList(0, 10.coerceAtMost(list.size))
+            .forEach {
+                println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
+            }
     }
 
     @Test
