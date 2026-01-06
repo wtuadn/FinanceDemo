@@ -59,6 +59,7 @@ import java.io.InputStreamReader
 
 class MainActivity : ComponentActivity() {
     private val symbols = listOf(
+        SymbolData("sh512040", "价值100ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.060, 0.000, 0.015, 0.0018, -0.019),
         SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, 0, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
         SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
@@ -99,7 +100,7 @@ class MainActivity : ComponentActivity() {
         SymbolData("sz159892", "恒生医药ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.120, 0.000, 0.097, 0.0015, -0.014),
         SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, 0, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
         SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
-    ).sortedByDescending { it.countlyPercentage }
+    ).sortedByDescending { it.dailyPercentage }
     // .subList(10, 20)
 
     override fun onCreate(savedInstanceState: Bundle?) {

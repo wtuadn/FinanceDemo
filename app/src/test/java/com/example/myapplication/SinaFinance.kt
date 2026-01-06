@@ -19,6 +19,7 @@ import kotlin.random.Random
  */
 class SinaFinance {
     private val symbols = listOf(
+        SymbolData("sh512040", "价值100ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.060, 0.000, 0.015, 0.0018, -0.019),
         SymbolData("sz159883", "医疗器械ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, 0, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
@@ -64,11 +65,11 @@ class SinaFinance {
 
     @Test
     fun main() {
-        // calculateBestMAArgs(symbols[2])
-        // calculateBestSKDJArgs(symbols[2])
+        calculateBestMAArgs(symbols[0])
+        // calculateBestSKDJArgs(symbols[0])
         // calculateBestMACDArgs(symbols[0])
         // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
-        calculateBestSKDJArgs(symbols.find { it.desc == "黄金ETF" }!!)
+        // calculateBestSKDJArgs(symbols.find { it.desc == "黄金ETF" }!!)
         // symbols.forEach { calculateSpecificMAArg(it) }
         // calculateBestMAArgs(SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
         // calculateSpecificMAArg(
@@ -222,7 +223,7 @@ class SinaFinance {
         }
         list.removeAll { it.first.totalCrossData.countlyPercentage < 0.01 } //过滤掉单次收益太低的
         list.removeAll { it.first.totalCrossData.totalCount < 2 } //过滤掉操作次数太少的
-        // list.removeAll { it.first.totalCrossData.totalCount > 20 } //过滤掉操作次数太多的
+        list.removeAll { it.first.totalCrossData.totalCount > 20 } //过滤掉操作次数太多的
         list.removeAll { it.first.totalCrossData.totalCount == 0 || it.first.totalCrossData.totalPercentage <= 0.0 }
         println("\n\n最小本金损失优先")
         repeat(2) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
@@ -232,7 +233,7 @@ class SinaFinance {
             }.thenByDescending {
                 it.first.totalCrossData.totalPercentage
             }
-        ).subList(0, 20.coerceAtMost(list.size))
+        ).subList(15, 30.coerceAtMost(list.size))
             .forEach {
                 println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
             }
