@@ -273,7 +273,7 @@ class MainActivity : ComponentActivity() {
                         text = "d=${symbol.d} mdd=${Utils.getPercentageString(symbol.mdd)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = itemState.getTradeTextColor(),
+                        color = if (symbol.d == 5 && itemState.isTodaySignal) Color(0xFFFFA500) else itemState.getTradeTextColor(),
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
