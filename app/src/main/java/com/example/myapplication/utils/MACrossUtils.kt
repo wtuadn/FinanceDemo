@@ -195,16 +195,14 @@ object MACrossUtils {
             }
 
             MAType.RSI -> {
-                Pair(
-                    calculateRSI(kLineData, symbol.shortMA),
-                    calculateRSI(kLineData, symbol.longMA)
-                )
+                val rsi = calculateRSI(kLineData, symbol.shortMA)
+                Pair(rsi, rsi)
             }
 
             MAType.OBV -> {
                 Pair(
                     calculateOBVMAData(kLineData, symbol.shortMA),
-                    emptyList()
+                    calculateOBVMAData(kLineData, symbol.longMA)
                 )
             }
 
