@@ -264,7 +264,7 @@ object MACrossUtils {
 
         // --- 步骤 3: 计算并更新所有交易中的最大持仓亏损 (Max Loss From Buy) ---
         if (buyData != null) {
-            // A. 持仓期间：跟踪当前交易的亏损
+            // A. 持仓期间：跟踪当前交易的亏损，并更新历史最大亏损
             val currentTradeBuyBalance = state.buyBalance ?: balanceBeforeToday
             if (newState.buyBalance == null) {
                 newState.buyBalance = currentTradeBuyBalance
@@ -280,17 +280,17 @@ object MACrossUtils {
                 newState.maxLossFromBuyStartBalance = currentTradeBuyBalance // 发生这次最大亏损的交易的起始资金
                 newState.maxLossFromBuyRecoveryDate = null // 既然创了新低，修复记录自然失效
             }
-        } else {
-            // B. 空仓期间：重置当前交易的买入本金
-            newState.buyBalance = null
-        }
-        
-        // C. 无论是否持仓，检查历史最大持仓亏损是否已修复
-        if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
-            // 检查当前净值是否已经回升到导致最大亏损的那笔交易的买入时水平
-            if (balanceAfterToday >= newState.maxLossFromBuyStartBalance) {
-                newState.maxLossFromBuyRecoveryDate = today.kLineData.date
+
+            // B. 持仓期间，检查历史最大持仓亏损是否已修复
+            if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
+                // 检查当前净值是否已经回升到导致最大亏损的那笔交易的买入时水平
+                if (balanceAfterToday >= newState.maxLossFromBuyStartBalance) {
+                    newState.maxLossFromBuyRecoveryDate = today.kLineData.date
+                }
             }
+        } else {
+            // C. 空仓期间：重置当前交易的买入本金
+            newState.buyBalance = null
         }
 
         return newState
