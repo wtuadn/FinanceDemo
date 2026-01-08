@@ -83,7 +83,8 @@ object MACrossUtils {
         symbol: SymbolData,
         kLineData: List<KLineData>,
     ): MACrossResult {
-        val cacheKey = "${symbol.code}-${symbol.shortMA}-${symbol.longMA}-${symbol.maType}-${symbol.d}-${symbol.extN}"
+        // val cacheKey = "${symbol.code}-${symbol.d}-${symbol.maType}-${symbol.shortMA}-${symbol.longMA}-${symbol.extN}"
+        val cacheKey = "${symbol.code}-${symbol.d}-${symbol.maType}-${symbol.shortMA}"
         val alignedMAData: List<AlignedMAData> = cachedAlignedMADataMap[cacheKey] ?: run {
             when (symbol.maType) {
                 MAType.SKDJ -> {
@@ -193,10 +194,17 @@ object MACrossUtils {
                 )
             }
 
+            MAType.RSI -> {
+                Pair(
+                    calculateRSI(kLineData, symbol.shortMA),
+                    calculateRSI(kLineData, symbol.longMA)
+                )
+            }
+
             MAType.OBV -> {
                 Pair(
                     calculateOBVMAData(kLineData, symbol.shortMA),
-                    calculateOBVMAData(kLineData, symbol.longMA)
+                    emptyList()
                 )
             }
 
@@ -302,6 +310,46 @@ object MACrossUtils {
         crossData: AlignedMAData?,
         buyData: AlignedMAData?,
         crossDataList: MutableList<MACrossData>, // Mutated by this function
+    ): Pair<AlignedMAData?, AlignedMAData?> {
+        return when (symbol.maType) {
+            MAType.RSI -> handleRSIValueTradingSignal(buyData, today, symbol, crossDataList)
+            else -> handleCrossTradingSignal(crossData, buyData, today, yesterday, symbol, crossDataList)
+        }
+    }
+
+    private fun handleRSIValueTradingSignal(
+        buyData: AlignedMAData?,
+        today: AlignedMAData,
+        symbol: SymbolData,
+        crossDataList: MutableList<MACrossData>,
+    ): Pair<AlignedMAData?, AlignedMAData?> {
+        var newBuyData = buyData
+        val isHolding = newBuyData != null
+
+        // Buy condition: shortMA < extN (e.g., RSI < 30 indicates oversold)
+        val shouldBuy = today.shortMAValue < symbol.longMA
+        // Sell condition: shortMA > extN (e.g., RSI > 70 indicates overbought)
+        val shouldSell = today.shortMAValue > symbol.extN
+
+        if (!isHolding && shouldBuy) {
+            // Currently not holding, but the buy signal is active. Execute buy.
+            newBuyData = today
+        } else if (isHolding && shouldSell) {
+            // Currently holding, but the sell signal is active. Execute sell.
+            crossDataList.add(MACrossData(newBuyData, today))
+            newBuyData = null
+        }
+        // In all other cases, maintain the current position (or lack thereof).
+        return null to newBuyData
+    }
+
+    private fun handleCrossTradingSignal(
+        crossData: AlignedMAData?,
+        buyData: AlignedMAData?,
+        today: AlignedMAData,
+        yesterday: AlignedMAData,
+        symbol: SymbolData,
+        crossDataList: MutableList<MACrossData>,
     ): Pair<AlignedMAData?, AlignedMAData?> {
         var newCrossData = crossData
         var newBuyData = buyData
@@ -420,6 +468,64 @@ object MACrossUtils {
             maList.add(MAData(kLineData, roundedEma))
         }
         return maList
+    }
+
+    /**
+     * 根据 KLineData 列表计算相对强弱指数 (RSI)。
+     *
+     * @param dataList 原始 KLineData 列表（必须按日期升序排列）。
+     * @param period RSI 的计算周期 N (例如：6, 12, 24)。
+     * @return 包含日期和对应 RSI 值的 MAData 列表。
+     */
+    fun calculateRSI(dataList: List<KLineData>, period: Int): List<MAData> {
+        if (dataList.size <= period) {
+            return dataList.map { MAData(it, null) }
+        }
+
+        val result = mutableListOf<MAData>()
+        // 在 RSI 无法计算的初始阶段，添加 null 值
+        for (i in 0 until period) {
+            result.add(MAData(dataList[i], null))
+        }
+
+        // 计算每日价格变化
+        val changes = (1..dataList.lastIndex).map { dataList[it].closePrice - dataList[it - 1].closePrice }
+
+        // 计算第一个周期的初始平均收益和损失
+        var sumGains = 0.0
+        var sumLosses = 0.0
+        for (i in 0 until period) {
+            val change = changes[i]
+            if (change > 0) {
+                sumGains += change
+            } else {
+                sumLosses -= change // 损失值为正
+            }
+        }
+
+        var avgGain = sumGains / period
+        var avgLoss = sumLosses / period
+
+        // 计算第一个 RSI 值
+        val rs = if (avgLoss == 0.0) 100.0 else avgGain / avgLoss
+        val rsi = 100.0 - (100.0 / (1.0 + rs))
+        result.add(MAData(dataList[period], rsi.roundTo3Decimals()))
+
+        // 使用平滑方法计算后续的 RSI 值
+        for (i in period until changes.size) {
+            val change = changes[i]
+            val currentGain = if (change > 0) change else 0.0
+            val currentLoss = if (change < 0) -change else 0.0
+
+            avgGain = (avgGain * (period - 1) + currentGain) / period
+            avgLoss = (avgLoss * (period - 1) + currentLoss) / period
+
+            val nextRs = if (avgLoss == 0.0) 100.0 else avgGain / avgLoss
+            val nextRsi = 100.0 - (100.0 / (1.0 + nextRs))
+            result.add(MAData(dataList[i + 1], nextRsi.roundTo3Decimals()))
+        }
+
+        return result
     }
 
     fun calculateOBVMAData(dataList: List<KLineData>, period: Int): List<MAData> {

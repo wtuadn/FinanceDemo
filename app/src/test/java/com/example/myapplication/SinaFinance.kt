@@ -66,14 +66,25 @@ class SinaFinance {
 
     @Test
     fun main() {
-        calculateBestMAArgs(symbols[0])
+        // calculateBestMAArgs(symbols[0])
         // calculateBestSKDJArgs(symbols[0])
         // calculateBestMACDArgs(symbols[0])
         // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
         // calculateBestSKDJArgs(symbols.find { it.desc == "黄金ETF" }!!)
         // symbols.forEach { calculateSpecificMAArg(it) }
-        // calculateBestMAArgs(SymbolData("sh512890", "红利低波ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
-        // calculateBestMAArgs(SymbolData("sh510050", "上证50ETF", 240, 5, 15, 120, 0, MAType.OBV, 0.010, -0.030, 0.153, 0.0006, 0.000))
+        // calculateBestRSIArgs(SymbolData("sh512890", "红利低波ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateBestRSIArgs(SymbolData("sh515100", "红利低波100ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateBestRSIArgs(SymbolData("sh515450", "红利低波50ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateBestRSIArgs(SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 10, 15, 0, MAType.SMA, 0.010, 0.000, 0.083, 0.0011, -0.006))
+        // calculateBestRSIArgs(SymbolData("sh510230", "金融ETF", 240, 1, 1, 10, 0, MAType.SMA, 0.120, 0.000, 0.052, 0.0034, 0.000))
+        // calculateBestRSIArgs(SymbolData("sz159851", "金融科技ETF", 240, 5, 10, 20, 0, MAType.SMA, 0.060, 0.000, 0.243, 0.0017, 0.000))
+        // calculateBestRSIArgs(SymbolData("sh512040", "价值100ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.060, 0.000, 0.015, 0.0018, -0.019))
+        // calculateBestRSIArgs(SymbolData("sh601398", "工商银行", 240, 5, 15, 20, 0, MAType.SMA, 0.140, 0.000, 0.130, 0.0006, -0.004))
+        // calculateBestRSIArgs(SymbolData("sh600036", "招商银行", 240, 1, 20, 30, 0, MAType.SMA, 0.070, -0.050, 0.378, 0.0009, -0.015))
+        // calculateBestRSIArgs(SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, 0, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020))
+        // calculateBestRSIArgs(SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066))
+        calculateBestRSIArgs(SymbolData("sz159985", "豆粕ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.000, -0.130, 0.335, 0.0004, 0.000))
+        // calculateBestRSIArgs(SymbolData("sh510050", "上证50ETF", 240, 5, 15, 120, 0, MAType.OBV, 0.010, -0.030, 0.153, 0.0006, 0.000))
         // calculateBestMAArgs(SymbolData("sh513000", "沪深300ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
         // calculateSpecificMAArg(
         //     SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018).copy(
@@ -182,7 +193,7 @@ class SinaFinance {
             var kLineData = Utils.getSinaKLineData(symbol, findBestData = true, useLocalData = true, datalen = 10000)
             kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
             // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
-            kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
             println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
             listOf(MAType.SMA, MAType.EMA, MAType.OBV).forEach { maType ->
                 listOf(1, 5, 10, 15, 20, 25, 30).forEach { shortMA ->
@@ -219,6 +230,67 @@ class SinaFinance {
                             }
                             upCrossDiffRate += step
                             downCrossDiffRate = start
+                        }
+                    }
+                }
+            }
+        }
+        list.removeAll { it.first.totalCrossData.countlyPercentage < 0.01 } //过滤掉单次收益太低的
+        list.removeAll { it.first.totalCrossData.totalCount < 2 } //过滤掉操作次数太少的
+        list.removeAll { it.first.totalCrossData.totalCount > 20 } //过滤掉操作次数太多的
+        list.removeAll { it.first.totalCrossData.totalCount == 0 || it.first.totalCrossData.totalPercentage <= 0.0 }
+        println("\n\n最小本金损失优先")
+        repeat(2) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        list.sortedWith(
+            compareByDescending<Pair<MACrossResult, String>> {
+                it.first.maxDrawDownData.maxLossFromBuyRate
+            }.thenByDescending {
+                it.first.totalCrossData.totalPercentage
+            }
+        ).subList(15, 30.coerceAtMost(list.size))
+            .forEach {
+                println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
+            }
+        println("\n\n收益优先")
+        repeat(10) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
+        list.sortedByDescending { it.first.totalCrossData.totalPercentage }
+            .subList(0, 10.coerceAtMost(list.size))
+            .forEach {
+                println("\n${it.second} \n${it.first.getTotalDesc()} \n${it.first.totalCrossData.crossDataList.joinToString("\n")}")
+            }
+    }
+
+    private fun calculateBestRSIArgs(symbol: SymbolData) {
+        val list = mutableListOf<Pair<MACrossResult, String>>()
+        val scale = 240
+        listOf(1, 5).forEach { d ->
+            symbol.d = d
+            var kLineData = Utils.getSinaKLineData(symbol, findBestData = true, useLocalData = true, datalen = 10000)
+            kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
+            // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
+            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
+            listOf(MAType.RSI).forEach { maType ->
+                (5..30).step(3).forEach { shortMA ->
+                    (5..95).step(3).forEach { longMA ->
+                        (5..95).step(3).forEach { extN ->
+                            val result = MACrossUtils.calculateMACross(
+                                symbol = symbol.also {
+                                    it.scale = scale
+                                    it.d = d
+                                    it.shortMA = shortMA
+                                    it.longMA = longMA
+                                    it.maType = maType
+                                    it.extN = extN
+                                },
+                                kLineData = kLineData,
+                            )
+                            symbol.apply {
+                                countlyPercentage = result.totalCrossData.countlyPercentage
+                                dailyPercentage = result.totalCrossData.dailyPercentage
+                                mdd = result.maxDrawDownData.maxLossFromBuyRate
+                            }
+                            list.add(result to getArgStr(symbol))
                         }
                     }
                 }
