@@ -22,6 +22,7 @@ object MACrossUtils {
     enum class MAType {
         SMA,
         EMA,
+        RSI,
         OBV,
         SKDJ,
         MACD,

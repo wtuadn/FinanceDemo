@@ -19,6 +19,7 @@ import kotlin.random.Random
  */
 class SinaFinance {
     private val symbols = listOf(
+        SymbolData("sh510050", "上证50ETF", 240, 5, 15, 120, 0, MAType.OBV, 0.010, -0.030, 0.153, 0.0006, 0.000),
         SymbolData("sh512040", "价值100ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.060, 0.000, 0.015, 0.0018, -0.019),
         SymbolData("sz159883", "医疗器械ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
         SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
@@ -65,13 +66,15 @@ class SinaFinance {
 
     @Test
     fun main() {
-        calculateBestMAArgs(symbols[0])
+        // calculateBestMAArgs(symbols[0])
         // calculateBestSKDJArgs(symbols[0])
         // calculateBestMACDArgs(symbols[0])
         // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
         // calculateBestSKDJArgs(symbols.find { it.desc == "黄金ETF" }!!)
         // symbols.forEach { calculateSpecificMAArg(it) }
-        // calculateBestMAArgs(SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateBestMAArgs(SymbolData("sh512890", "红利低波ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
+        // calculateBestMAArgs(SymbolData("sh510050", "上证50ETF", 240, 5, 15, 120, 0, MAType.OBV, 0.010, -0.030, 0.153, 0.0006, 0.000))
+        // calculateBestMAArgs(SymbolData("sh513000", "沪深300ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))
         // calculateSpecificMAArg(
         //     SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018).copy(
         //         maType = MAType.MACD,
@@ -81,16 +84,16 @@ class SinaFinance {
         //         longMA = 26
         //     )
         // )
-        // queryTradeSignal(symbols)
+        queryTradeSignal(symbols)
         println()
     }
 
     private fun queryTradeSignal(symbols: List<SymbolData>) {
         symbols
-            .find { it.code == "sh588790" }
+            .find { it.code == "sh510050" }
             ?.also {
                 val tradeSignalData = MACrossUtils.getTradeSignal(it)
-                println("${it.code} ${it.desc} ${tradeSignalData}}")
+                println("${it.code} ${it.desc} ${tradeSignalData}")
                 Thread.sleep(Random.nextLong(100, 500))
             }
     }
@@ -176,12 +179,12 @@ class SinaFinance {
         val scale = 240
         listOf(1, 5).forEach { d ->
             symbol.d = d
-            var kLineData = Utils.getSinaKLineData(symbol, findBestData = false, useLocalData = true, datalen = 10000)
+            var kLineData = Utils.getSinaKLineData(symbol, findBestData = true, useLocalData = true, datalen = 10000)
             kLineData = kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
             // kLineData = Utils.findLongestSublist(kLineData) { it.volume > 0 }
-            // kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
+            kLineData = Utils.findLatestSublist(kLineData) { it.volume > 0 }
             println("--- scale=$scale d=$d 有效数据时间段为：${kLineData.firstOrNull()?.date} - ${kLineData.lastOrNull()?.date} ---\n")
-            listOf(MAType.SMA, MAType.EMA/*, MAType.OBV*/).forEach { maType ->
+            listOf(MAType.SMA, MAType.EMA, MAType.OBV).forEach { maType ->
                 listOf(1, 5, 10, 15, 20, 25, 30).forEach { shortMA ->
                     listOf(5, 10, 15, 20, 25, 30, 40, 60, 120, 180).forEach { longMA ->
                         if (shortMA >= longMA) return@forEach
