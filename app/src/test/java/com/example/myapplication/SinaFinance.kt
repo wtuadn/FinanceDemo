@@ -66,7 +66,7 @@ class SinaFinance {
 
     @Test
     fun main() {
-        // calculateBestMAArgs(symbols[0])
+        calculateBestMAArgs(symbols[0])
         // calculateBestSKDJArgs(symbols[0])
         // calculateBestMACDArgs(symbols[0])
         // calculateBestMAArgs(symbols.find { it.desc == "工商银行" }!!)
@@ -84,7 +84,7 @@ class SinaFinance {
         //         longMA = 26
         //     )
         // )
-        queryTradeSignal(symbols)
+        // queryTradeSignal(symbols)
         println()
     }
 

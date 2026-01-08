@@ -41,11 +41,12 @@ object MACrossUtils {
         var maxDDValleyDate: String = "", // 最大回撤达到最低点的日期（波谷）
         var maxDDPeakValue: Double = 1.0, // 最大回撤发生时的峰值净值
         var maxDDRecoveryDate: String? = null, // 最大回撤的修复日期（净值重新回到峰值的日期），如果未修复则为 null
-        var buyBalance: Double? = null, // 买入时的本金净值，用于计算买入后最大损失率
-        var maxLossFromBuy: Double = 0.0, // 买入后相对于买入本金的最大损失率
-        var maxLossFromBuyDate: String = "", // 买入后最大损失发生的日期
-        var maxLossFromBuyStartDate: String = "", // 买入后最大损失开始的日期（首次达到最大损失的日期）
-        var maxLossFromBuyRecoveryDate: String? = null, // 买入后最大损失的修复日期（净值回到买入本金水平的日期），如果未修复则为 null
+        var buyBalance: Double? = null, // 当前交易的买入时本金净值
+        var maxLossFromBuy: Double = 0.0, // 所有交易中，单次持仓期间相对于买入本金的最大损失率
+        var maxLossFromBuyDate: String = "", // 发生最大本金损失的日期（波谷）
+        var maxLossFromBuyStartDate: String = "", // 发生最大本金损失的交易的开始日期
+        var maxLossFromBuyStartBalance: Double = 1.0, // 发生最大本金损失的交易的起始资金
+        var maxLossFromBuyRecoveryDate: String? = null, // 最大本金损失的修复日期（净值回到买入本金水平的日期），如果未修复则为 null
     )
     // -------------------------------------------------
 
@@ -205,73 +206,84 @@ object MACrossUtils {
 
     /**
      * Part A: 资金曲线与回撤计算 (每日盯市)
-     * Updates the current balance and the drawdown state based on today's data.
+     *
+     * 该方法负责每日更新资金曲线，并基于此计算两个核心指标：
+     * 1.  **最大回撤 (Max Drawdown)**:
+     *     衡量策略从历史最高点回落的最大幅度。这是对策略风险（无论是否持仓）的整体评估。
+     *
+     * 2.  **最大持仓亏损 (Max Loss From Buy)**:
+     *     衡量在**任何一次持仓期间**，从买入点开始计算所遭遇的最大亏损。
+     *     这专注于评估单笔交易可能出现的最坏情况，并记录下所有交易中最差的那一次。
+     *
      * @return The updated DrawdownState.
      */
     private fun handleDrawdownUpdate(
         state: DrawdownState,
         today: AlignedMAData,
         yesterday: AlignedMAData,
-        buyData: AlignedMAData?, // Need to know if we hold a position
+        buyData: AlignedMAData?, // 若昨日持仓，则不为 null
     ): DrawdownState {
-        val newState = state.copy() // Work on a copy for cleaner state updates
+        val newState = state.copy()
 
-        // 1. 如果昨天结束时持有仓位，今天的涨跌幅计入净值
-        val changeRatio = today.kLineData.closePrice / yesterday.kLineData.closePrice
+        // --- 步骤 1: 更新当前净值 (Equity Curve) ---
+        val balanceBeforeToday = state.currentBalance
         if (buyData != null) {
-            newState.currentBalance *= changeRatio
+            // 持仓中，净值根据当日价格变动
+            val priceChangeRatio = today.kLineData.closePrice / yesterday.kLineData.closePrice
+            newState.currentBalance *= priceChangeRatio
         }
+        val balanceAfterToday = newState.currentBalance
 
-        // 2. 更新买入后最大损失率 - 只有在持仓期间才计算
-        if (buyData != null) {
-            // 如果是第一次买入，记录初始本金
-            if (newState.buyBalance == null) {
-                newState.buyBalance = newState.currentBalance / changeRatio
-            }
-
-            // 计算从买入时的本金开始的损失率
-            val lossFromBuy = (newState.currentBalance - newState.buyBalance!!) / newState.buyBalance!!
-
-            // 更新买入后最大损失率
-            if (lossFromBuy < newState.maxLossFromBuy) {
-                newState.maxLossFromBuy = lossFromBuy
-                newState.maxLossFromBuyDate = today.kLineData.date
-                newState.maxLossFromBuyStartDate = buyData.kLineData.date
-                // 既然创了新低，之前的修复记录失效
-                newState.maxLossFromBuyRecoveryDate = null
-            } else if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
-                // 检查是否从最大损失中恢复（净值回到买入时的本金水平）
-                if (newState.currentBalance >= newState.buyBalance!!) {
-                    newState.maxLossFromBuyRecoveryDate = today.kLineData.date
-                }
-            }
-        } else {
-            newState.buyBalance = null
-        }
-
-        // 3. 更新历史最高净值 (High Water Mark)
-        if (newState.currentBalance > newState.peakBalance) {
-            newState.peakBalance = newState.currentBalance
+        // --- 步骤 2: 计算并更新全局最大回撤 (Max Drawdown) ---
+        // 跟踪净值曲线的历史高点
+        if (balanceAfterToday > newState.peakBalance) {
+            newState.peakBalance = balanceAfterToday
             newState.currentPeakDate = today.kLineData.date
         }
-
-        // 4. 计算当前回撤
-        val currentDrawDown = if (newState.peakBalance > 0) (newState.currentBalance - newState.peakBalance) / newState.peakBalance else 0.0
-
-        // 5. 核心逻辑：更新最大回撤 或 检查修复
-        if (currentDrawDown < newState.maxDrawDown) {
-            // 发现更大的回撤：更新记录
-            newState.maxDrawDown = currentDrawDown
+        // 计算从历史高点到当前点的回撤
+        val currentDrawdown = (balanceAfterToday - newState.peakBalance) / newState.peakBalance
+        if (currentDrawdown < newState.maxDrawDown) {
+            // 发现新的最大回撤
+            newState.maxDrawDown = currentDrawdown
             newState.maxDDPeakDate = newState.currentPeakDate
             newState.maxDDValleyDate = today.kLineData.date
             newState.maxDDPeakValue = newState.peakBalance
-
-            // 既然创了新低，说明之前的"修复"已经无效
-            newState.maxDDRecoveryDate = null
+            newState.maxDDRecoveryDate = null // 创了新低，重置修复日期
         } else if (newState.maxDDRecoveryDate == null && newState.maxDrawDown < 0) {
-            // 还没修复，检查今天是否爬出坑了
-            if (newState.currentBalance >= newState.maxDDPeakValue) {
+            // 如果处于回撤中且尚未修复，检查净值是否已恢复到前高
+            if (balanceAfterToday >= newState.maxDDPeakValue) {
                 newState.maxDDRecoveryDate = today.kLineData.date
+            }
+        }
+
+        // --- 步骤 3: 计算并更新所有交易中的最大持仓亏损 (Max Loss From Buy) ---
+        if (buyData != null) {
+            // A. 持仓期间：跟踪当前交易的亏损
+            val currentTradeBuyBalance = state.buyBalance ?: balanceBeforeToday
+            if (newState.buyBalance == null) {
+                newState.buyBalance = currentTradeBuyBalance
+            }
+
+            val lossForCurrentTrade = (balanceAfterToday - currentTradeBuyBalance) / currentTradeBuyBalance
+
+            // 如果当前交易的亏损超过了历史记录，则更新全局最大持仓亏损
+            if (lossForCurrentTrade < newState.maxLossFromBuy) {
+                newState.maxLossFromBuy = lossForCurrentTrade
+                newState.maxLossFromBuyDate = today.kLineData.date        // 亏损最低点的日期
+                newState.maxLossFromBuyStartDate = buyData.kLineData.date // 发生这次最大亏损的交易的起始日期
+                newState.maxLossFromBuyStartBalance = currentTradeBuyBalance // 发生这次最大亏损的交易的起始资金
+                newState.maxLossFromBuyRecoveryDate = null // 既然创了新低，修复记录自然失效
+            }
+        } else {
+            // B. 空仓期间：重置当前交易的买入本金
+            newState.buyBalance = null
+        }
+        
+        // C. 无论是否持仓，检查历史最大持仓亏损是否已修复
+        if (newState.maxLossFromBuyRecoveryDate == null && newState.maxLossFromBuy < 0) {
+            // 检查当前净值是否已经回升到导致最大亏损的那笔交易的买入时水平
+            if (balanceAfterToday >= newState.maxLossFromBuyStartBalance) {
+                newState.maxLossFromBuyRecoveryDate = today.kLineData.date
             }
         }
 
