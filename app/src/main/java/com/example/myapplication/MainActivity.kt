@@ -450,7 +450,7 @@ data class SymbolItemState(
     }
 
     private fun isError(): Boolean {
-        return tradeSignalData?.date?.contains("empty", ignoreCase = true) == true
+        return tradeSignalData?.date?.contains("kLineData", ignoreCase = true) == true
     }
 
     // 辅助扩展函数：将日期字符串转换为时间戳（假设日期格式是 YYYY-MM-DD）
