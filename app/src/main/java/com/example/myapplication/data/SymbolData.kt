@@ -17,7 +17,7 @@ data class SymbolData(
     var maType: MAType = MAType.SMA,
     var upCrossDiffRate: Double = 0.000,
     var downCrossDiffRate: Double = 0.000,
-    var countlyPercentage: Double = 0.0, // 平均次涨幅
+    var yearlyPercentage: Double = 0.0, // 平均年涨幅
     var dailyPercentage: Double = 0.0, // 平均天涨幅
     var mdd: Double = 0.0, // 最大本金损失率
 ) {
@@ -32,7 +32,7 @@ data class SymbolData(
             "maType=$maType, " +
             "upCrossDiffRate=${Utils.getPercentageString(upCrossDiffRate)}, " +
             "downCrossDiffRate=${Utils.getPercentageString(downCrossDiffRate)}, " +
-            "countlyPercentage=${Utils.getPercentageString(countlyPercentage)}, " +
+            "yearlyPercentage=${Utils.getPercentageString(yearlyPercentage)}, " +
             "dailyPercentage=${Utils.getPercentageString(dailyPercentage)}, " +
             "mdd=${Utils.getPercentageString(mdd)}"
     }

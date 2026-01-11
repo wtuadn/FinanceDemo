@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "com.example.myapplication2"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -37,7 +37,17 @@ android {
     buildFeatures {
         compose = true
     }
-}
+    testOptions {
+        // 配置本地单元测试 (Unit Tests)
+        unitTests {
+            // 使用 all 访问所有 Test 任务的配置
+            all { test ->
+                // 设置 JVM 参数，包括最大堆内存 (-Xmx)
+                test.jvmArgs("-Xmx20g", // 设置最大堆内存为 2GB
+                )
+            }
+        }
+    }}
 
 dependencies {
     implementation(libs.okhttp)

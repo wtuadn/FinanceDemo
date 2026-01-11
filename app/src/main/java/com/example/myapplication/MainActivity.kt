@@ -59,49 +59,59 @@ import java.io.InputStreamReader
 
 class MainActivity : ComponentActivity() {
     private val symbols = listOf(
-        SymbolData("sh512040", "价值100ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.060, 0.000, 0.015, 0.0018, -0.019),
-        SymbolData("sz159928", "消费ETF", 240, 5, 5, 15, 0, MAType.SMA, 0.150, -0.040, 0.717, 0.0014, 0.000),
-        SymbolData("sz159869", "游戏ETF", 240, 1, 10, 20, 0, MAType.SMA, 0.170, -0.150, 0.251, 0.0015, -0.036),
-        SymbolData("sz159852", "软件ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.190, 0.000, 0.082, 0.0029, -0.003),
-        SymbolData("sh516510", "云计算ETF", 240, 5, 1, 25, 0, MAType.SMA, 0.170, 0.000, 0.213, 0.0012, 0.000),
-        SymbolData("sz159998", "计算机ETF", 240, 5, 1, 25, 0, MAType.EMA, 0.090, -0.020, 0.088, 0.0006, 0.000),
-        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.180, -0.020, 0.146, 0.0044, 0.000),
-        SymbolData("sh601398", "工商银行", 240, 5, 15, 20, 0, MAType.SMA, 0.140, 0.000, 0.130, 0.0006, -0.004),
-        SymbolData("sh600036", "招商银行", 240, 1, 20, 30, 0, MAType.SMA, 0.070, -0.050, 0.378, 0.0009, -0.015),
-        SymbolData("sh513120", "港股创新药ETF", 240, 1, 1, 20, 0, MAType.SMA, 0.160, -0.030, 0.140, 0.0018, -0.014),
-        SymbolData("sh515790", "光伏ETF", 240, 1, 15, 40, 0, MAType.SMA, 0.130, 0.000, 0.179, 0.0022, 0.000),
-        SymbolData("sh513550", "港股通50ETF", 240, 5, 20, 25, 0, MAType.SMA, 0.080, 0.000, 0.204, 0.0018, 0.000),
-        SymbolData("sh512710", "军工龙头ETF", 240, 1, 1, 10, 0, MAType.EMA, 0.140, -0.020, 0.121, 0.0035, -0.036),
-        SymbolData("sz159227", "航空航天ETF", 240, 1, 17, 20, 8, MAType.SKDJ, 0.010, -0.020, 0.073, 0.0012, -0.009),
-        SymbolData("sz159218", "卫星产业ETF", 240, 1, 5, 10, 0, MAType.EMA, 0.030, 0.000, 0.033, 0.0012, -0.007),
-        SymbolData("sz159813", "半导体ETF", 240, 1, 30, 40, 0, MAType.SMA, 0.200, 0.000, 0.064, 0.0010, -0.005),
-        SymbolData("sz159713", "稀土ETF", 240, 1, 20, 25, 0, MAType.EMA, 0.120, 0.000, 0.184, 0.0021, 0.000),
-        SymbolData("sz159985", "豆粕ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.000, -0.130, 0.335, 0.0004, 0.000),
-        SymbolData("sh561330", "矿业ETF", 240, 1, 30, 40, 0, MAType.SMA, 0.170, 0.000, 0.215, 0.0029, 0.000),
-        SymbolData("sh513400", "道琼斯ETF", 240, 1, 12, 14, 14, MAType.SKDJ, 0.020, -0.020, 0.094, 0.0010, -0.037),
-        SymbolData("sh510230", "金融ETF", 240, 1, 1, 10, 0, MAType.SMA, 0.120, 0.000, 0.052, 0.0034, 0.000),
-        SymbolData("sz159851", "金融科技ETF", 240, 5, 10, 20, 0, MAType.SMA, 0.060, 0.000, 0.243, 0.0017, 0.000),
-        SymbolData("sh516860", "金融科技ETF", 240, 5, 5, 20, 0, MAType.EMA, 0.060, -0.040, 0.265, 0.0008, 0.000),
-        SymbolData("sh512010", "医药ETF", 240, 5, 20, 25, 0, MAType.SMA, 0.170, 0.000, 0.273, 0.0007, 0.000),
-        SymbolData("sz159766", "旅游ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.130, 0.000, 0.026, 0.0027, -0.003),
-        SymbolData("sh588790", "科创AIETF", 240, 5, 5, 10, 0, MAType.SMA, 0.000, 0.000, 0.177, 0.0030, 0.000),
-        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 10, 30, 0, MAType.SMA, 0.160, -0.030, 0.209, 0.0028, 0.000),
-        SymbolData("sh588220", "科创100ETF基金", 240, 1, 1, 40, 0, MAType.EMA, 0.060, 0.000, 0.166, 0.0023, 0.000),
-        SymbolData("sh588000", "科创50ETF", 240, 5, 1, 5, 0, MAType.EMA, 0.160, 0.000, 0.073, 0.0012, 0.000),
-        SymbolData("sz159755", "电池ETF", 240, 1, 1, 20, 0, MAType.EMA, 0.160, 0.000, 0.167, 0.0035, 0.000),
-        SymbolData("sh513090", "香港证券ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.140, -0.020, 0.153, 0.0060, -0.009),
-        SymbolData("sh562500", "机器人ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.080, -0.010, 0.071, 0.0012, -0.019),
-        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018),
-        SymbolData("sh515050", "5G通信ETF", 240, 1, 20, 25, 0, MAType.SMA, 0.200, 0.000, 0.225, 0.0058, -0.041),
-        SymbolData("sh513820", "港股红利ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.010, 0.000, 0.096, 0.0014, 0.000),
-        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.000, -0.030, 0.128, 0.0010, -0.004),
-        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 10, 15, 0, MAType.SMA, 0.010, 0.000, 0.083, 0.0011, -0.006),
-        SymbolData("sh513130", "恒生科技ETF", 240, 5, 30, 40, 0, MAType.SMA, 0.010, 0.000, 0.221, 0.0009, -0.012),
-        SymbolData("sz159892", "恒生医药ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.120, 0.000, 0.097, 0.0015, -0.014),
-        SymbolData("sz159941", "纳指ETF广发", 240, 5, 5, 10, 0, MAType.EMA, 0.000, -0.080, 0.648, 0.0007, -0.020),
-        SymbolData("sh518880", "黄金ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.050, -0.070, 0.564, 0.0006, -0.066),
-    ).sortedByDescending { it.dailyPercentage }
-    // .subList(10, 20)
+        SymbolData("sh563360", "A500ETF", 240, 5, 27, 72, 67, MAType.RSI, 0.000, 0.000, 0.179, 0.00161, -0.023),
+        SymbolData("sh513500", "标普500ETF", 240, 5, 18, 13, 44, MAType.SKDJ, 0.020, -0.010, 0.096, 0.00060, -0.009),
+        SymbolData("sh510500", "中证500ETF", 240, 5, 67, 42, 42, MAType.RSI, 0.000, 0.000, 0.048, 0.00574, -0.009),
+        SymbolData("sh510050", "上证50ETF", 240, 5, 31, 36, 21, MAType.MACD, 0.100, 0.000, 0.056, 0.00057, -0.049),
+        SymbolData("sh510300", "沪深300ETF", 240, 1, 28, 33, 24, MAType.SKDJ, 0.080, -0.050, 0.074, 0.00057, -0.071),
+        SymbolData("sh512040", "价值100ETF", 240, 1, 5, 25, 0, MAType.OBV, 0.200, -0.030, 0.119, 0.00092, -0.090),
+        SymbolData("sz159883", "医疗器械ETF", 240, 5, 12, 27, 27, MAType.RSI, 0.000, 0.000, 0.067, 0.00733, 0.000),
+        SymbolData("sz159928", "消费ETF", 240, 5, 41, 56, 6, MAType.MACD, 0.060, -0.050, 0.169, 0.00144, -0.007),
+        SymbolData("sh512980", "传媒ETF", 240, 5, 22, 32, 57, MAType.RSI, 0.000, 0.000, 0.105, 0.00245, 0.000),
+        SymbolData("sz159869", "游戏ETF", 240, 5, 2, 18, 3, MAType.SKDJ, 0.050, 0.000, 0.203, 0.00243, 0.000),
+        SymbolData("sz159852", "软件ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.030, 0.180, 0.00265, -0.046),
+        SymbolData("sh516510", "云计算ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.040, 0.000, 0.208, 0.00225, -0.038),
+        SymbolData("sz159998", "计算机ETF", 240, 1, 7, 12, 82, MAType.RSI, 0.000, 0.000, 0.106, 0.00252, -0.038),
+        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.030, 0.194, 0.00331, -0.030),
+        SymbolData("sh601398", "工商银行", 240, 5, 58, 3, 9, MAType.SKDJ, 0.100, -0.030, 0.062, 0.00075, -0.005),
+        SymbolData("sh600036", "招商银行", 240, 1, 15, 25, 0, MAType.SMA, 0.060, -0.060, 0.175, 0.00087, -0.034),
+        SymbolData("sh513120", "港股创新药ETF", 240, 5, 58, 2, 4, MAType.SKDJ, 0.000, 0.000, 0.272, 0.00234, -0.046),
+        SymbolData("sh515790", "光伏ETF", 240, 1, 30, 35, 0, MAType.SMA, 0.040, 0.000, 0.180, 0.00249, -0.028),
+        SymbolData("sh513550", "港股通50ETF", 240, 5, 21, 36, 26, MAType.MACD, 0.090, -0.050, 0.130, 0.00143, 0.000),
+        SymbolData("sh512710", "军工龙头ETF", 240, 5, 7, 17, 72, MAType.RSI, 0.000, 0.000, 0.111, 0.00159, -0.042),
+        SymbolData("sz159227", "航空航天ETF", 240, 5, 7, 87, 87, MAType.RSI, 0.000, 0.000, 0.290, 0.00360, -0.011),
+        SymbolData("sz159218", "卫星产业ETF", 240, 1, 12, 87, 82, MAType.RSI, 0.000, 0.000, 0.419, 0.00413, -0.015),
+        SymbolData("sz159813", "半导体ETF", 240, 5, 2, 3, 39, MAType.SKDJ, 0.000, -0.010, 0.147, 0.00116, -0.082),
+        SymbolData("sz159713", "稀土ETF", 240, 5, 43, 2, 4, MAType.SKDJ, 0.000, 0.000, 0.178, 0.00189, -0.058),
+        SymbolData("sz159985", "豆粕ETF", 240, 5, 53, 2, 4, MAType.SKDJ, 0.000, -0.040, 0.142, 0.00070, -0.037),
+        SymbolData("sh561330", "矿业ETF", 240, 1, 30, 200, 0, MAType.OBV, 0.000, -0.190, 0.371, 0.00404, -0.016),
+        SymbolData("sh513400", "道琼斯ETF", 240, 1, 13, 8, 44, MAType.SKDJ, 0.080, -0.060, 0.156, 0.00118, -0.009),
+        SymbolData("sh510230", "金融ETF", 240, 5, 7, 27, 57, MAType.RSI, 0.000, 0.000, 0.059, 0.00094, -0.049),
+        SymbolData("sz159851", "金融科技ETF", 240, 1, 58, 2, 4, MAType.SKDJ, 0.070, 0.000, 0.152, 0.00482, -0.044),
+        SymbolData("sh516860", "金融科技ETF", 240, 1, 1, 35, 0, MAType.EMA, 0.100, -0.010, 0.165, 0.00298, -0.035),
+        SymbolData("sh512010", "医药ETF", 240, 5, 26, 51, 5, MAType.MACD, 0.030, -0.060, 0.126, 0.00090, -0.047),
+        SymbolData("sz159766", "旅游ETF", 240, 5, 16, 36, 11, MAType.MACD, 0.040, -0.100, 0.116, 0.00152, -0.057),
+        SymbolData("sh588790", "科创AIETF", 240, 1, 5, 16, 26, MAType.MACD, 0.040, 0.000, 0.297, 0.00640, 0.000),
+        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 12, 42, 82, MAType.RSI, 0.000, 0.000, 0.441, 0.00180, -0.058),
+        SymbolData("sh588220", "科创100ETF基金", 240, 5, 47, 62, 57, MAType.RSI, 0.000, 0.000, 0.343, 0.00248, -0.069),
+        SymbolData("sh588000", "科创50ETF", 240, 1, 28, 8, 4, MAType.SKDJ, 0.090, -0.010, 0.104, 0.00126, -0.044),
+        SymbolData("sz159755", "电池ETF", 240, 1, 5, 30, 0, MAType.EMA, 0.020, 0.000, 0.135, 0.00155, -0.047),
+        SymbolData("sh513090", "香港证券ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.130, -0.020, 0.112, 0.00537, -0.029),
+        SymbolData("sh562500", "机器人ETF", 240, 1, 48, 3, 9, MAType.SKDJ, 0.100, 0.000, 0.187, 0.00307, -0.041),
+        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 40, 50, 0, MAType.SMA, 0.110, 0.000, 0.090, 0.00108, 0.000),
+        SymbolData("sh515050", "5G通信ETF", 240, 1, 8, 43, 3, MAType.SKDJ, 0.030, 0.000, 0.127, 0.00128, -0.041),
+        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 42, 57, 62, MAType.RSI, 0.000, 0.000, 0.144, 0.00183, 0.000),
+        SymbolData("sh512890", "红利低波ETF", 240, 1, 47, 47, 62, MAType.RSI, 0.000, 0.000, 0.154, 0.00089, -0.076),
+        SymbolData("sh515100", "红利低波100ETF", 240, 5, 26, 46, 11, MAType.MACD, 0.000, -0.090, 0.092, 0.00058, -0.025),
+        SymbolData("sh515450", "红利低波50ETF", 240, 1, 62, 42, 57, MAType.RSI, 0.000, 0.000, 0.071, 0.00188, -0.013),
+        SymbolData("sh513820", "港股红利ETF", 240, 1, 77, 52, 52, MAType.RSI, 0.000, 0.000, 0.172, 0.00312, -0.051),
+        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 48, 2, 4, MAType.SKDJ, 0.020, -0.020, 0.145, 0.00172, -0.014),
+        SymbolData("sh513130", "恒生科技ETF", 240, 5, 26, 31, 56, MAType.MACD, 0.020, -0.080, 0.180, 0.00217, -0.024),
+        SymbolData("sz159892", "恒生医药ETF", 240, 1, 1, 40, 0, MAType.OBV, 0.020, 0.000, 0.328, 0.00426, -0.007),
+        SymbolData("sz159941", "纳指ETF广发", 240, 1, 77, 42, 62, MAType.RSI, 0.000, 0.000, 0.173, 0.00149, -0.015),
+        SymbolData("sh518880", "黄金ETF", 240, 1, 72, 57, 72, MAType.RSI, 0.000, 0.000, 0.185, 0.00061, 0.000),
+    ).sortedByDescending { it.yearlyPercentage }
+    // .subList(0, 10)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -265,24 +275,24 @@ class MainActivity : ComponentActivity() {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "${index + 1}.${symbol.code} ${symbol.desc}",
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = "d=${symbol.d} mdd=${Utils.getPercentageString(symbol.mdd)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (symbol.d == 5 && itemState.isTodaySignal) Color(0xFFFFA500) else itemState.getTradeTextColor(),
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "countlyPercentage=${Utils.getPercentageString(symbol.countlyPercentage)}" +
+                        text = "yearlyPercentage=${Utils.getPercentageString(symbol.yearlyPercentage)}" +
                             "\ndailyPercentage=${Utils.getPercentageString(symbol.dailyPercentage)}",
                         fontSize = 12.sp,
                     )
                     if (itemState.tradeSignalData != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = itemState.tradeSignalData!!.date,
                             fontSize = 12.sp,
@@ -428,7 +438,7 @@ data class SymbolItemState(
             return Long.MAX_VALUE
         }
         return if (isTodaySignal) {
-            tradeSignalData!!.date.toTimestamp() + (symbolData.countlyPercentage * 100000).toLong()
+            tradeSignalData!!.date.toTimestamp() + (symbolData.yearlyPercentage * 100000).toLong()
         } else if (tradeSignalData != null) {
             tradeSignalData.date.toTimestamp()
         } else {

@@ -49,6 +49,37 @@ object Utils {
         return "次数：${upCount + downCount} 胜率：$rate"
     }
 
+    fun newList(start: List<Double>, end: Double, step: Double): List<Double> {
+        return start + generateSequence(start.last() + step) { it + step }
+            // 一直取到值小于或等于 end 为止
+            .takeWhile {
+                if (step > 0) {
+                    it <= end + step / 2
+                } else {
+                    it >= end + step / 2
+                }
+            } // 加上一个很小的数来避免浮点数精度问题
+            .toList()
+    }
+
+    fun newList(start: List<Int>, end: Int, step: Int): List<Int> {
+        return start + (start.last() + step..end).step(5).toList()
+    }
+
+    fun printHeapUsage() {
+        val runtime = Runtime.getRuntime()
+        val maxMemory = runtime.maxMemory()          // 最大堆内存（-Xmx）
+        val totalMemory = runtime.totalMemory()      // 当前堆总大小
+        val freeMemory = runtime.freeMemory()        // 空闲堆内存
+        val usedMemory = totalMemory - freeMemory    // 已用堆内存
+
+        println("=== Heap Usage ===")
+        println("Max Memory:    ${maxMemory / (1024 * 1024)} MB")
+        println("Total Memory:  ${totalMemory / (1024 * 1024)} MB")
+        println("Free Memory:   ${freeMemory / (1024 * 1024)} MB")
+        println("Used Memory:   ${usedMemory / (1024 * 1024)} MB")
+    }
+
     /**
      * 找到最长连续满足条件的数据
      */
@@ -104,7 +135,6 @@ object Utils {
         // 如果没有找到非 null 元素，则返回空列表
         return emptyList()
     }
-
 
     /**
      * 找到最新连续满足条件的数据

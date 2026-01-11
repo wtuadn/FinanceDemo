@@ -158,6 +158,7 @@ object MACrossUtils {
         // 5. 结果组装
         val yearMap = crossDataList.groupBy { it.exitData.kLineData.date.substring(0, 4).toInt() }
         return MACrossResult(
+            alignedMAData = alignedMAData,
             totalCrossData = GroupedMACrossData("total:", crossDataList),
             yearCrossDataMap = linkedMapOf<Int, GroupedMACrossData>().apply {
                 // 确保年份按照 longMADataList 存在的年份填充，即使该年没有交易
