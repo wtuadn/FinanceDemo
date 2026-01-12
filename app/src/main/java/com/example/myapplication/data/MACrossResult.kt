@@ -10,7 +10,7 @@ data class MACrossResult(
     val totalCrossData: GroupedMACrossData, //总结果
     val yearCrossDataMap: Map<Int, GroupedMACrossData>, // 按年结果
     val maxDrawDownData: MaxDrawDownData,
-    val latestTradeSignalData: TradeSignalData?,
+    val tradeSignalDataList: List<TradeSignalData>,
 ) {
     val yearlyPercentage = totalCrossData.totalPercentage / yearCrossDataMap.size
 

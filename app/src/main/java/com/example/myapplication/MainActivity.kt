@@ -2,7 +2,6 @@ package com.example.myapplication
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -57,6 +56,8 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
+private val orangeColor = Color(0xFFFFA500)
+
 class MainActivity : ComponentActivity() {
     private val symbols = listOf(
         SymbolData("sh563360", "A500ETF", 240, 5, 27, 72, 67, MAType.RSI, 0.000, 0.000, 0.179, 0.00161, -0.023),
@@ -107,7 +108,7 @@ class MainActivity : ComponentActivity() {
         SymbolData("sh513820", "港股红利ETF", 240, 1, 77, 52, 52, MAType.RSI, 0.000, 0.000, 0.172, 0.00312, -0.051),
         SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 48, 2, 4, MAType.SKDJ, 0.020, -0.020, 0.145, 0.00172, -0.014),
         SymbolData("sh513130", "恒生科技ETF", 240, 5, 26, 31, 56, MAType.MACD, 0.020, -0.080, 0.180, 0.00217, -0.024),
-        SymbolData("sz159892", "恒生医药ETF", 240, 1, 1, 40, 0, MAType.OBV, 0.020, 0.000, 0.328, 0.00426, -0.007),
+        SymbolData("sz159892", "恒生医药ETF", 240, 5, 38, 2, 3, MAType.SKDJ, 0.070, 0.000, 0.143, 0.00214, -0.020),
         SymbolData("sz159941", "纳指ETF广发", 240, 1, 77, 42, 62, MAType.RSI, 0.000, 0.000, 0.173, 0.00149, -0.015),
         SymbolData("sh518880", "黄金ETF", 240, 1, 72, 57, 72, MAType.RSI, 0.000, 0.000, 0.185, 0.00061, 0.000),
     ).sortedByDescending { it.yearlyPercentage }
@@ -226,18 +227,11 @@ class MainActivity : ComponentActivity() {
 
                 val symbol = initialList[index]
 
-                val tradeSignal = try {
-                    MACrossUtils.getTradeSignal(symbol)
-                } catch (e: Exception) {
-                    Log.e("MainActivity", "获取交易信号失败: ${e.message}", e)
-                    null
-                }
-
                 // 2. 更新当前 Item 为加载完成
                 val completedItem = mutableList[index].copy(
                     isLoading = false,
                     isCompleted = true,
-                    tradeSignalData = tradeSignal
+                    tradeSignalDataList = MACrossUtils.getTradeSignal(symbol, getBacktestLog(symbol))
                 )
                 mutableList[index] = completedItem
 
@@ -283,7 +277,7 @@ class MainActivity : ComponentActivity() {
                         text = "d=${symbol.d} mdd=${Utils.getPercentageString(symbol.mdd)}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (symbol.d == 5 && itemState.isTodaySignal) Color(0xFFFFA500) else itemState.getTradeTextColor(),
+                        color = if (symbol.d == 5 && itemState.isTodaySignal) orangeColor else itemState.getTradeTextColor(),
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
@@ -291,12 +285,26 @@ class MainActivity : ComponentActivity() {
                             "\ndailyPercentage=${Utils.getPercentageString(symbol.dailyPercentage)}",
                         fontSize = 12.sp,
                     )
-                    if (itemState.tradeSignalData != null) {
+                    itemState.tradeSignalDataList.takeLast(3).reversed().forEachIndexed { i, tradeSignalData ->
+
+                        var textColor = itemState.getTradeTextColor()
+                        if (i > 0 || tradeSignalData.tradeSignal == TradeSignal.SELL) {
+                            val backtestLog = getBacktestLog(symbol)
+                            if (!backtestLog.isNullOrBlank()) {
+                                // 正则表达式匹配 YYYY-MM-DD——YYYY-MM-DD 格式的日期
+                                val regex = "(\\d{4}-\\d{2}-\\d{2})——(\\d{4}-\\d{2}-\\d{2})".toRegex()
+                                val findAll = regex.findAll(backtestLog)
+                                val matches = findAll.map { it.groupValues[1] }.toList() + findAll.map { it.groupValues[2] }
+                                if (!matches.contains(tradeSignalData.date)) {
+                                    textColor = orangeColor
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = itemState.tradeSignalData!!.date,
+                            text = "$tradeSignalData",
                             fontSize = 12.sp,
-                            color = itemState.getTradeTextColor(),
+                            color = textColor,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -331,7 +339,7 @@ class MainActivity : ComponentActivity() {
                     } else if (itemState.isCompleted) {
                         // 状态 2: 加载完成，显示信号或无信号
                         if (itemState.shouldShowSignal) {
-                            val signalText = when (itemState.tradeSignalData?.tradeSignal) {
+                            val signalText = when (itemState.tradeSignalDataList.lastOrNull()?.tradeSignal) {
                                 TradeSignal.BUY -> "📈 买入"
                                 TradeSignal.SELL -> "📉 卖出"
                                 else -> "无"
@@ -402,10 +410,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getBacktestLog(symbolData: SymbolData): String? {
-        return readAssetFile(this, "backtest.txt")
+    private val backtestLogs by lazy {
+        readAssetFile(this, "backtest.txt")
             .split("---")
-            .find { it.contains(symbolData.code) }
+    }
+
+    private fun getBacktestLog(symbolData: SymbolData): String? {
+        return backtestLogs.find { it.contains(symbolData.code) }
     }
 
     private fun readAssetFile(context: Context, fileName: String): String =
@@ -423,14 +434,14 @@ class MainActivity : ComponentActivity() {
 // 1. 新的数据状态类：包含 Symbol 数据、信号结果，以及当前的加载状态
 data class SymbolItemState(
     val symbolData: SymbolData,
-    val tradeSignalData: TradeSignalData? = null,
+    val tradeSignalDataList: List<TradeSignalData> = emptyList(),
     val isLoading: Boolean = false, // 正在加载中
     val isCompleted: Boolean = false, // 加载已完成
 ) {
-    val shouldShowSignal: Boolean = tradeSignalData != null
-    val isTodaySignal: Boolean = tradeSignalData?.date?.startsWith(Utils.timestampToDate(System.currentTimeMillis() / 1000)) == true
-    val isBuySignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.BUY
-    val isSellSignal: Boolean = tradeSignalData?.tradeSignal == TradeSignal.SELL
+    val shouldShowSignal: Boolean = tradeSignalDataList != null
+    val isTodaySignal: Boolean = tradeSignalDataList.lastOrNull()?.date?.startsWith(Utils.timestampToDate(System.currentTimeMillis() / 1000)) == true
+    val isBuySignal: Boolean = tradeSignalDataList.lastOrNull()?.tradeSignal == TradeSignal.BUY
+    val isSellSignal: Boolean = tradeSignalDataList.lastOrNull()?.tradeSignal == TradeSignal.SELL
 
     // 用于排序：今天有信号 > 有信号 > 无信号。信号越新越靠前。
     fun getSortPriority(): Long {
@@ -438,9 +449,9 @@ data class SymbolItemState(
             return Long.MAX_VALUE
         }
         return if (isTodaySignal) {
-            tradeSignalData!!.date.toTimestamp() + (symbolData.yearlyPercentage * 100000).toLong()
-        } else if (tradeSignalData != null) {
-            tradeSignalData.date.toTimestamp()
+            tradeSignalDataList.last().date.toTimestamp() + (symbolData.yearlyPercentage * 100000).toLong()
+        } else if (tradeSignalDataList.isNotEmpty()) {
+            tradeSignalDataList.last().date.toTimestamp()
         } else {
             // 0 表示没有信号，排在时间戳后面
             0L
@@ -460,7 +471,7 @@ data class SymbolItemState(
     }
 
     private fun isError(): Boolean {
-        return tradeSignalData?.date?.contains("kLineData", ignoreCase = true) == true
+        return tradeSignalDataList.firstOrNull()?.date?.contains("kLineData", ignoreCase = true) == true
     }
 
     // 辅助扩展函数：将日期字符串转换为时间戳（假设日期格式是 YYYY-MM-DD）

@@ -1,5 +1,6 @@
 package com.example.myapplication.utils
 
+import android.os.Build
 import com.example.myapplication.data.AlignedMAData
 import com.example.myapplication.data.GroupedMACrossData
 import com.example.myapplication.data.KLineData
@@ -11,6 +12,9 @@ import com.example.myapplication.data.SymbolData
 import com.example.myapplication.data.TradeSignal
 import com.example.myapplication.data.TradeSignalData
 import java.math.RoundingMode
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import kotlin.math.max
 import kotlin.math.min
 
@@ -59,11 +63,30 @@ object MACrossUtils {
     /**
      * 获取当前交易信号
      */
-    fun getTradeSignal(symbol: SymbolData): TradeSignalData? {
-        val history = Utils.getSinaKLineData(
-            symbol = symbol.copy(scale = 240),
-            datalen = (symbol.shortMA.coerceAtLeast(symbol.longMA).coerceAtLeast(symbol.extN) * 3).coerceAtLeast(100)
-        )
+    fun getTradeSignal(symbol: SymbolData, backtestLog: String? = null): List<TradeSignalData> {
+        val maxArg = symbol.shortMA.coerceAtLeast(symbol.longMA).coerceAtLeast(symbol.extN)
+        val atLeastLen = maxArg * if (symbol.maType == MAType.OBV) 100 else if (symbol.maType == MAType.RSI) 5 else 3
+        var datalen = atLeastLen.coerceAtLeast(100)
+        if (!backtestLog.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            runCatching {
+                // 正则表达式匹配 YYYY-MM-DD—— 格式的日期
+                val regex = "(\\d{4}-\\d{2}-\\d{2})——".toRegex()
+                val matches = regex.findAll(backtestLog).map { it.groupValues[1] }.toList()
+
+                if (matches.isNotEmpty()) {
+                    // 找到倒数第二个起始日期
+                    val secondToLastDateStr = matches.takeLast(2).first()
+                    val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+                    val startDate = LocalDate.parse(secondToLastDateStr, formatter)
+                    val today = LocalDate.now()
+                    // 计算日期差并加上最小周期
+                    val daysBetween = ChronoUnit.DAYS.between(startDate, today)
+                    datalen = atLeastLen + daysBetween.toInt()
+                }
+            }
+        }
+
+        val history = Utils.getSinaKLineData(symbol = symbol.copy(scale = 240), datalen = datalen)
         Thread.sleep(Utils.httpDelay)
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
         val kLineData = if (history.isNotEmpty() && lastest.isNotEmpty()) {
@@ -78,12 +101,12 @@ object MACrossUtils {
             emptyList()
         }
         if (kLineData.isEmpty()) {
-            return TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty")
+            return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty"))
         }
         if (symbol.maType == MAType.OBV && kLineData.find { it.volume <= 0 } != null) {
-            return TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.volume<=0")
+            return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.volume<=0"))
         }
-        return calculateMACross(symbol, kLineData).latestTradeSignalData
+        return calculateMACross(symbol, kLineData).tradeSignalDataList
     }
 
     private val cachedAlignedMADataMap = mutableMapOf<String, List<AlignedMAData>>()
@@ -118,7 +141,7 @@ object MACrossUtils {
         val crossDataList = mutableListOf<MACrossData>()
         var crossData: AlignedMAData? = null // 记录均线交叉点（用于判断阈值）
         var buyData: AlignedMAData? = null   // 当前持仓的买入点（不为 null 表示当前持仓）
-        var latestTradeSignalData: TradeSignalData? = null
+        var latestTradeSignalData = mutableListOf<TradeSignalData>()
 
         var drawdownState = DrawdownState(
             currentPeakDate = if (alignedMAData.isNotEmpty()) alignedMAData[0].kLineData.date else ""
@@ -147,9 +170,9 @@ object MACrossUtils {
                 crossDataList = crossDataList,
             )
             if (buyData == null && newBuyData != null) {
-                latestTradeSignalData = TradeSignalData(TradeSignal.BUY, today.kLineData.date)
+                latestTradeSignalData += TradeSignalData(TradeSignal.BUY, today.kLineData.date)
             } else if (buyData != null && newBuyData == null) {
-                latestTradeSignalData = TradeSignalData(TradeSignal.SELL, today.kLineData.date)
+                latestTradeSignalData += TradeSignalData(TradeSignal.SELL, today.kLineData.date)
             }
             crossData = newCrossData
             buyData = newBuyData
@@ -178,7 +201,7 @@ object MACrossUtils {
                 maxLossFromBuyStartDate = drawdownState.maxLossFromBuyState?.lossFromBuyStartDate ?: "",
                 maxLossFromBuyRecoveryDate = drawdownState.maxLossFromBuyState?.lossFromBuyRecoveryDate
             ),
-            latestTradeSignalData = latestTradeSignalData,
+            tradeSignalDataList = latestTradeSignalData,
         )
     }
 

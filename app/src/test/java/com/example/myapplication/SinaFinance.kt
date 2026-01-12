@@ -74,7 +74,7 @@ class SinaFinance {
         SymbolData("sh513820", "港股红利ETF", 240, 1, 77, 52, 52, MAType.RSI, 0.000, 0.000, 0.172, 0.00312, -0.051),
         SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 48, 2, 4, MAType.SKDJ, 0.020, -0.020, 0.145, 0.00172, -0.014),
         SymbolData("sh513130", "恒生科技ETF", 240, 5, 26, 31, 56, MAType.MACD, 0.020, -0.080, 0.180, 0.00217, -0.024),
-        SymbolData("sz159892", "恒生医药ETF", 240, 1, 1, 40, 0, MAType.OBV, 0.020, 0.000, 0.328, 0.00426, -0.007),
+        SymbolData("sz159892", "恒生医药ETF", 240, 5, 38, 2, 3, MAType.SKDJ, 0.070, 0.000, 0.143, 0.00214, -0.020),
         SymbolData("sz159941", "纳指ETF广发", 240, 1, 77, 42, 62, MAType.RSI, 0.000, 0.000, 0.173, 0.00149, -0.015),
         SymbolData("sh518880", "黄金ETF", 240, 1, 72, 57, 72, MAType.RSI, 0.000, 0.000, 0.185, 0.00061, 0.000),
     )
@@ -84,11 +84,12 @@ class SinaFinance {
         val symbol = symbols.first()
 
         // calculateBestSingleArgs(symbol)
-        symbols.forEach { calculateSpecificArg(it) }
+        // symbols.forEach { calculateSpecificArg(it) }
 
-        // calculateSpecificArg(SymbolData(code="sh510050",desc="上证50ETF",scale=240,d=5,shortMA=15,longMA=105,extN=0,maType=MAType.OBV,upCrossDiffRate=0.000,downCrossDiffRate=-0.050,yearlyPercentage=0.219,dailyPercentage=0.00051,mdd=-0.006))
-
-        Utils.printHeapUsage()
+        // calculateSpecificArg(SymbolData("sz159892", "恒生医药ETF", 240, 1, 1, 40, 0, MAType.OBV, 0.020, 0.000, 0.328, 0.00426, -0.007))
+        // queryTradeSignal(listOf(SymbolData("sz159892", "恒生医药ETF", 240, 5, 38, 2, 3, MAType.SKDJ, 0.070, 0.000, 0.143, 0.00214, -0.020)))
+        queryTradeSignal(listOf(SymbolData(code="sh513820",desc="港股红利ETF",scale=240,d=1,shortMA=77,longMA=52,extN=52,maType=MAType.RSI,upCrossDiffRate=0.000,downCrossDiffRate=0.000,yearlyPercentage=0.172,dailyPercentage=0.00312,mdd=-0.051)))
+        // Utils.printHeapUsage()
     }
 
     private suspend fun calculateBestSingleArgs(symbol: SymbolData) {
@@ -208,6 +209,9 @@ class SinaFinance {
                 }
             }
         }
+        if (kLineDataMap[1]?.find { it.volume <= 0 } != null) {
+            allParamCombinations.removeAll { it.second.maType == MAType.OBV } // 缺失成交量数据的OBV参数组合不参与计算
+        }
 
         println("开始并行计算，总任务数: ${allParamCombinations.size}")
         val completedTasks = AtomicInteger(0)
@@ -308,13 +312,14 @@ class SinaFinance {
     }
 
     private fun queryTradeSignal(symbols: List<SymbolData>) {
-        symbols
-            .find { it.code == "sz159915" }
-            ?.also {
-                val tradeSignalData = MACrossUtils.getTradeSignal(it)
-                println("${it.code} ${it.desc} ${tradeSignalData}")
-                Thread.sleep(Random.nextLong(100, 500))
-            }
+        symbols.forEach {
+            // .find { it.code == "sz159915" }
+            // ?.also {
+            val backtestLog = runCatching { File("src/main/assets", "backtest.txt").readText() }.getOrNull()
+            val tradeSignalData = MACrossUtils.getTradeSignal(it, backtestLog)
+            println("${it.code} ${it.desc} ${tradeSignalData.takeLast(2)}")
+            Thread.sleep(Random.nextLong(100, 500))
+        }
     }
 
     private fun getArgStr(symbol: SymbolData, result: MACrossResult): String =
