@@ -149,11 +149,17 @@ class MainActivity : ComponentActivity() {
                             itemsIndexed(symbolItemStates) { index, item ->
                                 SymbolRow(
                                     index = index,
-                                    initItemState = item,
+                                    itemState = item,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp),
                                     onClick = { selectedSymbol = item },
+                                    onItemUpdate = { updatedItem ->
+                                        // 更新列表中的单个项目状态
+                                        symbolItemStates = symbolItemStates.toMutableList().apply {
+                                            this[index] = updatedItem
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -248,11 +254,11 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun SymbolRow(
         index: Int,
-        initItemState: SymbolItemState,
+        itemState: SymbolItemState,
         modifier: Modifier = Modifier,
         onClick: (() -> Unit)? = null,
+        onItemUpdate: (SymbolItemState) -> Unit,
     ) {
-        var itemState by remember(initItemState) { mutableStateOf(initItemState) }
         val symbol = itemState.symbolData
 
         Card(
@@ -320,7 +326,7 @@ class MainActivity : ComponentActivity() {
                                 fetchTradeSignalsSequentially(
                                     initialList = listOf(symbol),
                                     onUpdate = { updatedList ->
-                                        itemState = updatedList.first()
+                                        onItemUpdate(updatedList.first())
                                     },
                                     onComplete = {
                                     }
