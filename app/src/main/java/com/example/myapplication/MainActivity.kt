@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -127,7 +128,7 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(symbols.map { SymbolItemState(it) })
                 }
 
-                var isGlobalLoading by remember { mutableStateOf(false) }
+                var loadingD by remember { mutableStateOf<Int?>(null) } // null:不在加载, 1:加载d=1, 5:加载d=5
                 var selectedSymbol by remember { mutableStateOf<SymbolItemState?>(null) }
 
                 Box(
@@ -167,36 +168,80 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // 底部按钮
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    isGlobalLoading = true
-                                    fetchTradeSignalsSequentially(
-                                        initialList = symbolItemStates.map { it.symbolData },
-                                        onUpdate = { updatedList ->
-                                            symbolItemStates = updatedList // 实时更新列表
-                                        },
-                                        onComplete = {
-                                            isGlobalLoading = false
-                                            symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
-                                        }
-                                    )
-                                }
-                            },
-                            enabled = !isGlobalLoading,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            if (isGlobalLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier
-                                        .size(24.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.Black
-                                )
-                            } else {
-                                Text(text = "刷新交易信号")
+                            // 刷新 D=1 按钮
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        loadingD = 1
+                                        fetchTradeSignalsSequentially(
+                                            initialList = symbolItemStates.map { it.symbolData }.filter { it.d == 1 },
+                                            onUpdate = { updatedList ->
+                                                val updatedMap = updatedList.associateBy { it.symbolData.code }
+                                                symbolItemStates = symbolItemStates.map { existingItem ->
+                                                    updatedMap[existingItem.symbolData.code] ?: existingItem
+                                                }
+                                            },
+                                            onComplete = {
+                                                loadingD = null
+                                                symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
+                                            }
+                                        )
+                                    }
+                                },
+                                enabled = loadingD == null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp)
+                            ) {
+                                if (loadingD == 1) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color.Black
+                                    )
+                                } else {
+                                    Text(text = "刷新 D=1")
+                                }
+                            }
+
+                            // 刷新 D=5 按钮
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        loadingD = 5
+                                        fetchTradeSignalsSequentially(
+                                            initialList = symbolItemStates.map { it.symbolData }.filter { it.d == 5 },
+                                            onUpdate = { updatedList ->
+                                                val updatedMap = updatedList.associateBy { it.symbolData.code }
+                                                symbolItemStates = symbolItemStates.map { existingItem ->
+                                                    updatedMap[existingItem.symbolData.code] ?: existingItem
+                                                }
+                                            },
+                                            onComplete = {
+                                                loadingD = null
+                                                symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
+                                            }
+                                        )
+                                    }
+                                },
+                                enabled = loadingD == null,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp)
+                            ) {
+                                if (loadingD == 5) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color.Black
+                                    )
+                                } else {
+                                    Text(text = "刷新 D=5")
+                                }
                             }
                         }
                     }
