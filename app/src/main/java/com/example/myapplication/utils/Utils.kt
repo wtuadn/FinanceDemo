@@ -36,17 +36,8 @@ object Utils {
         }
     }
 
-    fun getPercentageString(percentage: Double): String {
-        return "%.2f%%".format(percentage * 100)
-    }
-
-    fun getVictoryRateString(upCount: Int, downCount: Int): String {
-        val rate = when {
-            upCount == 0 -> getPercentageString(0.0)
-            downCount == 0 -> getPercentageString(1.0)
-            else -> getPercentageString(upCount.toDouble() / (upCount + downCount))
-        }
-        return "次数：${upCount + downCount} 胜率：$rate"
+    fun getPercentageString(percentage: Double, subCount: Int = 2): String {
+        return "%.${subCount}f%%".format(percentage * 100)
     }
 
     fun newList(start: List<Double>, end: Double, step: Double): List<Double> {
@@ -312,5 +303,5 @@ object Utils {
         }
     }
 
-    val httpDelay: Long get() = Random.nextLong(200, 300)
+    val httpDelay: Long get() = Random.nextLong(900, 1000)
 }

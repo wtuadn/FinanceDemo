@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import com.example.myapplication.data.KLineData
+import com.example.myapplication.data.SymbolData
 import com.example.myapplication.utils.MACrossUtils
 
 /**
@@ -14,6 +15,6 @@ data class CalculationArgs(
     val extNList: List<Int> = listOf(0),
     val upCrossDiffRateList: List<Double> = listOf(0.0),
     val downCrossDiffRateList: List<Double> = listOf(0.0),
-    val ignoreShortOverLong: Boolean = false,
-    val filter: (kLineData: List<KLineData>) -> List<KLineData> = { it },
+    val argsFilter: (symbol: SymbolData) -> Boolean = { true },
+    val kLineDataFilter: (kLineData: List<KLineData>) -> List<KLineData> = { it },
 )

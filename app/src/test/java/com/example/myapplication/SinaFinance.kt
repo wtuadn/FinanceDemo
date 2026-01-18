@@ -16,7 +16,6 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.random.Random
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -26,142 +25,75 @@ import kotlin.random.Random
  */
 class SinaFinance {
     private val symbols = listOf(
-        SymbolData("sh563360", "A500ETF", 240, 5, 27, 72, 67, MAType.RSI, 0.000, 0.000, 0.179, 0.00161, -0.023),
-        SymbolData("sh513500", "标普500ETF", 240, 5, 18, 13, 44, MAType.SKDJ, 0.020, -0.010, 0.096, 0.00060, -0.009),
-        SymbolData("sh510500", "中证500ETF", 240, 5, 67, 42, 42, MAType.RSI, 0.000, 0.000, 0.048, 0.00574, -0.009),
-        SymbolData("sh510050", "上证50ETF", 240, 5, 31, 36, 21, MAType.MACD, 0.100, 0.000, 0.056, 0.00057, -0.049),
+        SymbolData("sh512880", "证券ETF", 240, 1, 17, 27, 47, MAType.RSI, 0.000, 0.000, 0.046, 0.00217, -0.053),
+        SymbolData("sz159326", "电网设备ETF", 240, 1, 5, 36, 46, MAType.MACD, 0.100, -0.080, 0.166, 0.00230, -0.031),
+        SymbolData("sh563360", "A500ETF", 240, 1, 60, 70, 0, MAType.SMA, 0.000, 0.000, 0.175, 0.00160, -0.012),
+        SymbolData("sh513500", "标普500ETF", 240, 1, 5, 55, 0, MAType.OBV, 0.140, -0.030, 0.126, 0.00080, -0.047),
+        SymbolData("sh510500", "中证500ETF", 240, 5, 28, 2, 3, MAType.SKDJ, 0.050, 0.000, 0.068, 0.00080, -0.064),
+        SymbolData("sh510050", "上证50ETF", 240, 1, 17, 27, 67, MAType.RSI, 0.000, 0.000, 0.072, 0.00096, -0.076),
         SymbolData("sh510300", "沪深300ETF", 240, 1, 28, 33, 24, MAType.SKDJ, 0.080, -0.050, 0.074, 0.00057, -0.071),
-        SymbolData("sh512040", "价值100ETF", 240, 1, 5, 25, 0, MAType.OBV, 0.200, -0.030, 0.119, 0.00092, -0.090),
-        SymbolData("sz159883", "医疗器械ETF", 240, 5, 12, 27, 27, MAType.RSI, 0.000, 0.000, 0.067, 0.00733, 0.000),
-        SymbolData("sz159928", "消费ETF", 240, 5, 41, 56, 6, MAType.MACD, 0.060, -0.050, 0.169, 0.00144, -0.007),
-        SymbolData("sh512980", "传媒ETF", 240, 5, 22, 32, 57, MAType.RSI, 0.000, 0.000, 0.105, 0.00245, 0.000),
-        SymbolData("sz159869", "游戏ETF", 240, 5, 2, 18, 3, MAType.SKDJ, 0.050, 0.000, 0.203, 0.00243, 0.000),
-        SymbolData("sz159852", "软件ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.030, 0.180, 0.00265, -0.046),
-        SymbolData("sh516510", "云计算ETF", 240, 5, 1, 5, 0, MAType.SMA, 0.040, 0.000, 0.208, 0.00225, -0.038),
-        SymbolData("sz159998", "计算机ETF", 240, 1, 7, 12, 82, MAType.RSI, 0.000, 0.000, 0.106, 0.00252, -0.038),
-        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.030, 0.194, 0.00331, -0.030),
-        SymbolData("sh601398", "工商银行", 240, 5, 58, 3, 9, MAType.SKDJ, 0.100, -0.030, 0.062, 0.00075, -0.005),
-        SymbolData("sh600036", "招商银行", 240, 1, 15, 25, 0, MAType.SMA, 0.060, -0.060, 0.175, 0.00087, -0.034),
-        SymbolData("sh513120", "港股创新药ETF", 240, 5, 58, 2, 4, MAType.SKDJ, 0.000, 0.000, 0.272, 0.00234, -0.046),
+        SymbolData("sh512040", "价值100ETF", 240, 1, 15, 20, 0, MAType.OBV, 0.090, -0.030, 0.105, 0.00061, -0.077),
+        SymbolData("sz159883", "医疗器械ETF", 240, 1, 7, 17, 42, MAType.RSI, 0.000, 0.000, 0.088, 0.00482, -0.041),
+        SymbolData("sz159928", "消费ETF", 240, 5, 51, 56, 11, MAType.MACD, 0.000, 0.000, 0.146, 0.00136, -0.067),
+        SymbolData("sh512980", "传媒ETF", 240, 1, 33, 2, 3, MAType.SKDJ, 0.100, -0.010, 0.120, 0.00242, -0.048),
+        SymbolData("sz159869", "游戏ETF", 240, 5, 2, 18, 3, MAType.SKDJ, 0.000, 0.000, 0.246, 0.00229, -0.059),
+        SymbolData("sz159852", "软件ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.040, 0.205, 0.00276, -0.058),
+        SymbolData("sh516510", "云计算ETF", 240, 1, 53, 2, 4, MAType.SKDJ, 0.080, -0.030, 0.261, 0.00283, -0.066),
+        SymbolData("sz159998", "计算机ETF", 240, 1, 43, 2, 14, MAType.SKDJ, 0.100, -0.060, 0.168, 0.00176, -0.067),
+        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.040, 0.181, 0.00291, -0.038),
+        SymbolData("sh601398", "工商银行", 240, 1, 30, 40, 0, MAType.OBV, 0.190, -0.020, 0.076, 0.00063, -0.037),
+        SymbolData("sh600036", "招商银行", 240, 1, 10, 25, 0, MAType.SMA, 0.090, -0.060, 0.179, 0.00094, -0.062),
+        SymbolData("sh513120", "港股创新药ETF", 240, 1, 48, 3, 19, MAType.SKDJ, 0.010, -0.060, 0.317, 0.00218, -0.077),
         SymbolData("sh515790", "光伏ETF", 240, 1, 30, 35, 0, MAType.SMA, 0.040, 0.000, 0.180, 0.00249, -0.028),
-        SymbolData("sh513550", "港股通50ETF", 240, 5, 21, 36, 26, MAType.MACD, 0.090, -0.050, 0.130, 0.00143, 0.000),
-        SymbolData("sh512710", "军工龙头ETF", 240, 5, 7, 17, 72, MAType.RSI, 0.000, 0.000, 0.111, 0.00159, -0.042),
-        SymbolData("sz159227", "航空航天ETF", 240, 5, 7, 87, 87, MAType.RSI, 0.000, 0.000, 0.290, 0.00360, -0.011),
-        SymbolData("sz159218", "卫星产业ETF", 240, 1, 12, 87, 82, MAType.RSI, 0.000, 0.000, 0.419, 0.00413, -0.015),
+        SymbolData("sh513550", "港股通50ETF", 240, 5, 21, 41, 16, MAType.MACD, 0.100, -0.030, 0.140, 0.00124, -0.049),
+        SymbolData("sh512710", "军工龙头ETF", 240, 1, 7, 17, 37, MAType.RSI, 0.000, 0.000, 0.067, 0.00579, -0.039),
+        SymbolData("sz159227", "航空航天ETF", 240, 1, 2, 3, 19, MAType.SKDJ, 0.100, -0.050, 0.211, 0.00397, -0.033),
+        SymbolData("sz159218", "卫星产业ETF", 240, 1, 3, 2, 3, MAType.SKDJ, 0.000, -0.070, 0.565, 0.00719, -0.016),
         SymbolData("sz159813", "半导体ETF", 240, 5, 2, 3, 39, MAType.SKDJ, 0.000, -0.010, 0.147, 0.00116, -0.082),
-        SymbolData("sz159713", "稀土ETF", 240, 5, 43, 2, 4, MAType.SKDJ, 0.000, 0.000, 0.178, 0.00189, -0.058),
+        SymbolData("sz159713", "稀土ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.080, -0.010, 0.139, 0.00416, -0.048),
         SymbolData("sz159985", "豆粕ETF", 240, 5, 53, 2, 4, MAType.SKDJ, 0.000, -0.040, 0.142, 0.00070, -0.037),
         SymbolData("sh561330", "矿业ETF", 240, 1, 30, 200, 0, MAType.OBV, 0.000, -0.190, 0.371, 0.00404, -0.016),
-        SymbolData("sh513400", "道琼斯ETF", 240, 1, 13, 8, 44, MAType.SKDJ, 0.080, -0.060, 0.156, 0.00118, -0.009),
-        SymbolData("sh510230", "金融ETF", 240, 5, 7, 27, 57, MAType.RSI, 0.000, 0.000, 0.059, 0.00094, -0.049),
-        SymbolData("sz159851", "金融科技ETF", 240, 1, 58, 2, 4, MAType.SKDJ, 0.070, 0.000, 0.152, 0.00482, -0.044),
-        SymbolData("sh516860", "金融科技ETF", 240, 1, 1, 35, 0, MAType.EMA, 0.100, -0.010, 0.165, 0.00298, -0.035),
+        SymbolData("sh513400", "道琼斯ETF", 240, 1, 13, 8, 39, MAType.SKDJ, 0.050, -0.060, 0.144, 0.00117, -0.013),
+        SymbolData("sh510230", "金融ETF", 240, 1, 35, 150, 0, MAType.OBV, 0.100, -0.020, 0.075, 0.00116, -0.098),
+        SymbolData("sh516860", "金融科技ETF", 240, 1, 53, 2, 4, MAType.SKDJ, 0.080, 0.000, 0.161, 0.00435, -0.042),
         SymbolData("sh512010", "医药ETF", 240, 5, 26, 51, 5, MAType.MACD, 0.030, -0.060, 0.126, 0.00090, -0.047),
         SymbolData("sz159766", "旅游ETF", 240, 5, 16, 36, 11, MAType.MACD, 0.040, -0.100, 0.116, 0.00152, -0.057),
-        SymbolData("sh588790", "科创AIETF", 240, 1, 5, 16, 26, MAType.MACD, 0.040, 0.000, 0.297, 0.00640, 0.000),
-        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 12, 42, 82, MAType.RSI, 0.000, 0.000, 0.441, 0.00180, -0.058),
-        SymbolData("sh588220", "科创100ETF基金", 240, 5, 47, 62, 57, MAType.RSI, 0.000, 0.000, 0.343, 0.00248, -0.069),
-        SymbolData("sh588000", "科创50ETF", 240, 1, 28, 8, 4, MAType.SKDJ, 0.090, -0.010, 0.104, 0.00126, -0.044),
-        SymbolData("sz159755", "电池ETF", 240, 1, 5, 30, 0, MAType.EMA, 0.020, 0.000, 0.135, 0.00155, -0.047),
-        SymbolData("sh513090", "香港证券ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.130, -0.020, 0.112, 0.00537, -0.029),
+        SymbolData("sh588790", "科创AIETF", 240, 1, 2, 2, 54, MAType.SKDJ, 0.000, -0.040, 0.351, 0.00339, -0.061),
+        SymbolData("sh513310", "中韩半导体ETF", 240, 1, 1, 20, 0, MAType.SMA, 0.040, -0.020, 0.252, 0.00205, -0.034),
+        SymbolData("sh588220", "科创100ETF基金", 240, 1, 13, 3, 49, MAType.SKDJ, 0.090, -0.080, 0.210, 0.00242, -0.052),
+        SymbolData("sh588000", "科创50ETF", 240, 1, 60, 80, 0, MAType.OBV, 0.170, 0.000, 0.162, 0.00149, -0.038),
+        SymbolData("sz159755", "电池ETF", 240, 1, 46, 56, 5, MAType.MACD, 0.090, 0.000, 0.156, 0.00267, -0.097),
+        SymbolData("sh513090", "香港证券ETF", 240, 1, 48, 2, 3, MAType.SKDJ, 0.090, -0.040, 0.201, 0.00256, -0.062),
         SymbolData("sh562500", "机器人ETF", 240, 1, 48, 3, 9, MAType.SKDJ, 0.100, 0.000, 0.187, 0.00307, -0.041),
-        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 40, 50, 0, MAType.SMA, 0.110, 0.000, 0.090, 0.00108, 0.000),
-        SymbolData("sh515050", "5G通信ETF", 240, 1, 8, 43, 3, MAType.SKDJ, 0.030, 0.000, 0.127, 0.00128, -0.041),
+        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 3, 2, 44, MAType.SKDJ, 0.010, 0.000, 0.121, 0.00084, -0.082),
+        SymbolData("sh515050", "5G通信ETF", 240, 1, 18, 8, 19, MAType.SKDJ, 0.010, -0.100, 0.249, 0.00149, -0.112),
         SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 42, 57, 62, MAType.RSI, 0.000, 0.000, 0.144, 0.00183, 0.000),
-        SymbolData("sh512890", "红利低波ETF", 240, 1, 47, 47, 62, MAType.RSI, 0.000, 0.000, 0.154, 0.00089, -0.076),
-        SymbolData("sh515100", "红利低波100ETF", 240, 5, 26, 46, 11, MAType.MACD, 0.000, -0.090, 0.092, 0.00058, -0.025),
-        SymbolData("sh515450", "红利低波50ETF", 240, 1, 62, 42, 57, MAType.RSI, 0.000, 0.000, 0.071, 0.00188, -0.013),
-        SymbolData("sh513820", "港股红利ETF", 240, 1, 77, 52, 52, MAType.RSI, 0.000, 0.000, 0.172, 0.00312, -0.051),
-        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 48, 2, 4, MAType.SKDJ, 0.020, -0.020, 0.145, 0.00172, -0.014),
-        SymbolData("sh513130", "恒生科技ETF", 240, 5, 26, 31, 56, MAType.MACD, 0.020, -0.080, 0.180, 0.00217, -0.024),
-        SymbolData("sz159892", "恒生医药ETF", 240, 5, 38, 2, 3, MAType.SKDJ, 0.070, 0.000, 0.143, 0.00214, -0.020),
-        SymbolData("sz159941", "纳指ETF广发", 240, 1, 77, 42, 62, MAType.RSI, 0.000, 0.000, 0.173, 0.00149, -0.015),
-        SymbolData("sh518880", "黄金ETF", 240, 1, 72, 57, 72, MAType.RSI, 0.000, 0.000, 0.185, 0.00061, 0.000),
+        SymbolData("sh512890", "红利低波ETF", 240, 5, 12, 47, 72, MAType.RSI, 0.000, 0.000, 0.152, 0.00089, -0.069),
+        SymbolData("sh515100", "红利低波100ETF", 240, 1, 3, 8, 3, MAType.SKDJ, 0.070, -0.100, 0.109, 0.00067, -0.093),
+        SymbolData("sh515450", "红利低波50ETF", 240, 1, 8, 2, 59, MAType.SKDJ, 0.090, -0.090, 0.102, 0.00063, -0.061),
+        SymbolData("sh513820", "港股红利ETF", 240, 1, 2, 2, 54, MAType.SKDJ, 0.100, -0.070, 0.129, 0.00139, -0.027),
+        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 43, 2, 4, MAType.SKDJ, 0.030, -0.040, 0.150, 0.00164, -0.025),
+        SymbolData("sh513130", "恒生科技ETF", 240, 1, 13, 23, 3, MAType.SKDJ, 0.060, 0.000, 0.139, 0.00166, -0.048),
+        SymbolData("sz159892", "恒生医药ETF", 240, 5, 43, 2, 3, MAType.SKDJ, 0.060, 0.000, 0.146, 0.00205, -0.038),
+        SymbolData("sz159941", "纳指ETF广发", 240, 1, 58, 8, 9, MAType.SKDJ, 0.000, -0.030, 0.189, 0.00088, -0.059),
+        SymbolData("sh518880", "黄金ETF", 240, 1, 22, 62, 77, MAType.RSI, 0.000, 0.000, 0.143, 0.00046, -0.127),
     )
 
     @Test
     fun main() = runBlocking {
-        val symbol = symbols.first()
+        // val symbol = symbols.first()
+        val symbol = symbols.find { it.code == "" || it.desc == "沪深300ETF" }!!
 
         // calculateBestSingleArgs(symbol)
-        // symbols.forEach { calculateSpecificArg(it) }
+        // calculateSpecificArg(symbol)
+        // queryTradeSignal(symbols.filter { it.maType== MAType.OBV })
 
         // calculateSpecificArg(SymbolData("sz159892", "恒生医药ETF", 240, 1, 1, 40, 0, MAType.OBV, 0.020, 0.000, 0.328, 0.00426, -0.007))
-        // queryTradeSignal(listOf(SymbolData("sz159892", "恒生医药ETF", 240, 5, 38, 2, 3, MAType.SKDJ, 0.070, 0.000, 0.143, 0.00214, -0.020)))
-        queryTradeSignal(listOf(SymbolData(code="sh513820",desc="港股红利ETF",scale=240,d=1,shortMA=77,longMA=52,extN=52,maType=MAType.RSI,upCrossDiffRate=0.000,downCrossDiffRate=0.000,yearlyPercentage=0.172,dailyPercentage=0.00312,mdd=-0.051)))
-        // Utils.printHeapUsage()
-    }
+        // queryTradeSignal(listOf(SymbolData(code="sh513130",desc="恒生科技ETF",scale=240,d=1,shortMA=13,longMA=23,extN=3,maType=MAType.SKDJ,upCrossDiffRate=0.060,downCrossDiffRate=0.000,yearlyPercentage=0.139,dailyPercentage=0.00166,mdd=-0.048)))
 
-    private suspend fun calculateBestSingleArgs(symbol: SymbolData) {
-        val filter = { kLineData: List<KLineData> ->
-            kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
-        }
-        var argsList = listOf(
-            CalculationArgs(
-                maType = MAType.SMA,
-                d = listOf(1, 5), // 日K和周K
-                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
-                longMAList = Utils.newList(listOf(5), 240, 10),
-                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
-                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
-                filter = filter,
-            ),
-            CalculationArgs(
-                maType = MAType.EMA,
-                d = listOf(1, 5),
-                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
-                longMAList = Utils.newList(listOf(5), 240, 10),
-                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
-                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
-                filter = filter,
-            ),
-            // OBV 的参数组合
-            CalculationArgs(
-                maType = MAType.OBV,
-                d = listOf(1), // obv只能用日线，周线成交量有问题看不出来
-                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
-                longMAList = Utils.newList(listOf(5), 240, 10),
-                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
-                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
-                filter = { Utils.findLatestSublist(filter(it)) { it.volume > 0 } },
-            ),
-            // RSI 的参数组合
-            CalculationArgs(
-                maType = MAType.RSI,
-                d = listOf(1, 5),
-                shortMAList = Utils.newList(listOf(1), 100, 1),   // RSI单根线
-                longMAList = Utils.newList(listOf(1), 100, 1),    // 超卖阈值
-                extNList = Utils.newList(listOf(1), 100, 1), // 超买阈值
-                ignoreShortOverLong = true,
-                filter = filter,
-            ),
-            // MACD 的参数组合
-            CalculationArgs(
-                maType = MAType.MACD,
-                d = listOf(1, 5),
-                shortMAList = Utils.newList(listOf(5), 60, 1), //短周期
-                longMAList = Utils.newList(listOf(5), 60, 1), //长周期
-                extNList = Utils.newList(listOf(5), 60, 1), // DIF 平滑周期
-                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.1, 0.01),
-                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.1, -0.01),
-                filter = filter,
-            ),
-            // SKDJ 的参数组合
-            CalculationArgs(
-                maType = MAType.SKDJ,
-                d = listOf(1, 5),
-                extNList = Utils.newList(listOf(3), 60, 1), // RSV 计算周期
-                shortMAList = Utils.newList(listOf(2), 60, 1), // K 值平滑周期
-                longMAList = Utils.newList(listOf(2), 60, 1), // D 值平滑周期
-                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.1, 0.01),
-                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.1, -0.01),
-                ignoreShortOverLong = true,
-                filter = filter,
-            )
-        )
-        // argsList = argsList.filter { it.maType == MAType.SMA }
-        // argsList = argsList.filterNot { it.maType == MAType.OBV }
-        calculateBestArgs(symbol, argsList)
+        // fetchJsonFile()
+
+        printBasicInfo()
     }
 
     /**
@@ -186,22 +118,22 @@ class SinaFinance {
             args.d.forEach { d ->
                 args.shortMAList.forEach { shortMA ->
                     args.longMAList.forEach { longMA ->
-                        if (!args.ignoreShortOverLong && shortMA >= longMA) return@forEach
                         args.extNList.forEach { extN ->
                             args.upCrossDiffRateList.forEach { upCrossDiffRate ->
                                 args.downCrossDiffRateList.forEach { downCrossDiffRate ->
-                                    allParamCombinations.add(
-                                        args to symbol.copy(
-                                            scale = scale,
-                                            d = d,
-                                            shortMA = shortMA,
-                                            longMA = longMA,
-                                            maType = args.maType,
-                                            extN = extN,
-                                            upCrossDiffRate = upCrossDiffRate,
-                                            downCrossDiffRate = downCrossDiffRate
-                                        )
+                                    val symbol = symbol.copy(
+                                        scale = scale,
+                                        d = d,
+                                        shortMA = shortMA,
+                                        longMA = longMA,
+                                        maType = args.maType,
+                                        extN = extN,
+                                        upCrossDiffRate = upCrossDiffRate,
+                                        downCrossDiffRate = downCrossDiffRate
                                     )
+                                    if (args.argsFilter(symbol)) {
+                                        allParamCombinations.add(args to symbol)
+                                    }
                                 }
                             }
                         }
@@ -224,10 +156,11 @@ class SinaFinance {
                 chunk.map { (args, currentSymbol) ->
                     val resultData = kLineDataMap[currentSymbol.d]?.let { kLineData ->
                         if (kLineData.isNotEmpty()) {
-                            val filteredKLineData = args.filter(kLineData)
+                            val filteredKLineData = args.kLineDataFilter(kLineData)
                             val result = MACrossUtils.calculateMACross(
                                 symbol = currentSymbol,
                                 kLineData = filteredKLineData,
+                                useCache = true,
                             )
                             val symbolForLogging = currentSymbol.copy(
                                 yearlyPercentage = result.yearlyPercentage,
@@ -253,57 +186,33 @@ class SinaFinance {
 
         // 4. 过滤掉不符合要求的结果
         val filteredList = results.toMutableList()
-        filteredList.removeAll { it.first.yearlyPercentage < 0.03 } // 过滤掉平均年收益过低的结果
-        filteredList.removeAll { it.first.totalCrossData.totalCount <= 2 } // 过滤掉交易次数过少的结果
+        filteredList.removeAll { it.first.yearlyPercentage < 0.04 } // 过滤掉平均年收益过低的结果
+        filteredList.removeAll { it.first.totalCrossData.totalCount <= 3 } // 过滤掉交易次数过少的结果
         filteredList.removeAll { it.first.totalCrossData.totalCount / it.first.yearCrossDataMap.size > 5 } // 过滤掉交易次数过多的结果
-        // filteredList.removeAll { it.first.totalCrossData.totalCount == 0 || it.first.totalCrossData.totalPercentage <= 0.0 } // 过滤掉没有交易或总收益为负的结果
+        val filterByMdd = { start: Int, end: Int, size: Int ->
+            filteredList.filter {
+                val mdd = it.first.maxDrawDownData.maxLossFromBuyRate // 最大本金亏损 (为负数)
+                (-mdd * 100).toInt() in start until end
+            }.sortedByDescending {
+                it.first.totalCrossData.totalPercentage // 总涨幅
+            }.take(size)
+        }
 
         println("\n\n计算完成，加权排序结果 (综合考虑收益率和本金损失)")
 
-        println("\n\n总涨幅优先")
-        repeat(5) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
-        filteredList.sortedByDescending {
-            it.first.totalCrossData.totalPercentage
-        }.take(3).forEach {
-            println(
-                "\n${it.second} \n${it.first.getTotalDesc()}"
-                    + " \n${it.first.totalCrossData.crossDataList.joinToString("\n")}"
-            )
-        }
-        println("\n\n最小本金损失优先 0-2%")
-        repeat(5) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
-        filteredList.filter {
+        val avgMaxPercentageList = filterByMdd(0, 15, 5)
+        val avgMaxPercentage =
+            Utils.getPercentageString(avgMaxPercentageList.sumOf { it.first.totalCrossData.totalPercentage } / avgMaxPercentageList.size)
+        println("平均最大涨幅$avgMaxPercentage")
+
+        val finalResultList = mutableListOf<Pair<MACrossResult, String>>()
+        finalResultList.addAll(filterByMdd(0, 5, 5))
+        finalResultList.addAll(filterByMdd(5, 10, 5))
+        finalResultList.addAll(filterByMdd(10, 15, 5))
+        finalResultList.sortedByDescending {
             val mdd = it.first.maxDrawDownData.maxLossFromBuyRate // 最大本金亏损 (为负数)
-            (-mdd * 100).toInt() in 0 until 2
-        }.sortedByDescending {
-            it.first.totalCrossData.totalPercentage
-        }.take(5).forEach {
-            println(
-                "\n${it.second} \n${it.first.getTotalDesc()}"
-                    + " \n${it.first.totalCrossData.crossDataList.joinToString("\n")}"
-            )
-        }
-        println("\n\n最小本金损失优先 < 2-5%")
-        repeat(5) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
-        filteredList.filter {
-            val mdd = it.first.maxDrawDownData.maxLossFromBuyRate // 最大本金亏损 (为负数)
-            (-mdd * 100).toInt() in 2 until 5
-        }.sortedByDescending {
-            it.first.totalCrossData.totalPercentage
-        }.take(5).forEach {
-            println(
-                "\n${it.second} \n${it.first.getTotalDesc()}"
-                    + " \n${it.first.totalCrossData.crossDataList.joinToString("\n")}"
-            )
-        }
-        println("\n\n最小本金损失优先 < 5-10%")
-        repeat(5) { println("--- --- --- --- --- --- --- --- --- --- --- --- --- --- ---") }
-        filteredList.filter {
-            val mdd = it.first.maxDrawDownData.maxLossFromBuyRate // 最大本金亏损 (为负数)
-            (-mdd * 100).toInt() in 5 until 10
-        }.sortedByDescending {
-            it.first.totalCrossData.totalPercentage
-        }.take(5).forEach {
+            it.first.totalCrossData.dailyPercentage * 240 + 3 * mdd
+        }.forEach {
             println(
                 "\n${it.second} \n${it.first.getTotalDesc()}"
                     + " \n${it.first.totalCrossData.crossDataList.joinToString("\n")}"
@@ -312,14 +221,15 @@ class SinaFinance {
     }
 
     private fun queryTradeSignal(symbols: List<SymbolData>) {
-        symbols.forEach {
-            // .find { it.code == "sz159915" }
-            // ?.also {
-            val backtestLog = runCatching { File("src/main/assets", "backtest.txt").readText() }.getOrNull()
-            val tradeSignalData = MACrossUtils.getTradeSignal(it, backtestLog)
-            println("${it.code} ${it.desc} ${tradeSignalData.takeLast(2)}")
-            Thread.sleep(Random.nextLong(100, 500))
-        }
+        symbols
+            .forEachIndexed { i, it ->
+                // .find { it.desc == "上证50ETF" }
+                // ?.also {
+                if (i > 0) Thread.sleep(Utils.httpDelay)
+                val backtestLog = runCatching { File("src/main/assets", "backtest.txt").readText() }.getOrNull()
+                val tradeSignalData = MACrossUtils.getTradeSignal(it, backtestLog)
+                println("${it.code} ${it.desc} ${tradeSignalData.takeLast(3)}")
+            }
     }
 
     private fun getArgStr(symbol: SymbolData, result: MACrossResult): String =
@@ -327,8 +237,84 @@ class SinaFinance {
             ",upCrossDiffRate=${String.format("%.3f", symbol.upCrossDiffRate)},downCrossDiffRate=${String.format("%.3f", symbol.downCrossDiffRate)}" +
             ",yearlyPercentage=${String.format("%.3f", symbol.yearlyPercentage)}" +
             ",dailyPercentage=${String.format("%.5f", symbol.dailyPercentage)}" +
-            ",mdd=${String.format("%.3f", symbol.mdd)}),"
-    // + "\n有效数据时间${result.alignedMAData.firstOrNull()?.kLineData?.date} - ${result.alignedMAData.lastOrNull()?.kLineData?.date}"
+            ",mdd=${String.format("%.3f", symbol.mdd)})," +
+            "\n有效数据时间${result.alignedMAData.firstOrNull()?.kLineData?.date} - ${result.alignedMAData.lastOrNull()?.kLineData?.date}"
+
+    private suspend fun calculateBestSingleArgs(symbol: SymbolData) {
+        val filter = { kLineData: List<KLineData> ->
+            kLineData.filterNot { it.date.split("-").first().toInt() < 2016 }
+        }
+        var argsList = listOf(
+            CalculationArgs(
+                maType = MAType.SMA,
+                d = listOf(1, 5), // 日K和周K
+                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
+                longMAList = Utils.newList(listOf(5), 240, 10),
+                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
+                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
+                argsFilter = { it.shortMA < it.longMA },
+                kLineDataFilter = filter,
+            ),
+            CalculationArgs(
+                maType = MAType.EMA,
+                d = listOf(1, 5),
+                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
+                longMAList = Utils.newList(listOf(5), 240, 10),
+                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
+                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
+                argsFilter = { it.shortMA < it.longMA },
+                kLineDataFilter = filter,
+            ),
+            // OBV 的参数组合
+            CalculationArgs(
+                maType = MAType.OBV,
+                d = listOf(1), // obv只能用日线，周线成交量有问题看不出来
+                shortMAList = Utils.newList(listOf(1, 5), 60, 5),
+                longMAList = Utils.newList(listOf(5), 240, 10),
+                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.2, 0.01),
+                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.2, -0.01),
+                argsFilter = { it.shortMA < it.longMA },
+                kLineDataFilter = { Utils.findLatestSublist(filter(it)) { it.volume > 0 } },
+            ),
+            // RSI 的参数组合
+            CalculationArgs(
+                maType = MAType.RSI,
+                d = listOf(1, 5),
+                shortMAList = Utils.newList(listOf(1), 100, 1),   // RSI单根线
+                longMAList = Utils.newList(listOf(1), 100, 1),    // 超卖阈值
+                extNList = Utils.newList(listOf(1), 100, 1), // 超买阈值
+                argsFilter = { it.longMA < 80 && it.extN < 80 && it.longMA < it.extN },
+                kLineDataFilter = filter,
+            ),
+            // MACD 的参数组合
+            CalculationArgs(
+                maType = MAType.MACD,
+                d = listOf(1, 5),
+                shortMAList = Utils.newList(listOf(5), 60, 1), //短周期
+                longMAList = Utils.newList(listOf(5), 60, 1), //长周期
+                extNList = Utils.newList(listOf(5), 60, 1), // DIF 平滑周期
+                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.1, 0.01),
+                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.1, -0.01),
+                argsFilter = { it.shortMA < it.longMA },
+                kLineDataFilter = filter,
+            ),
+            // SKDJ 的参数组合
+            CalculationArgs(
+                maType = MAType.SKDJ,
+                d = listOf(1, 5),
+                extNList = Utils.newList(listOf(3), 60, 1), // RSV 计算周期
+                shortMAList = Utils.newList(listOf(2), 60, 1), // K 值平滑周期
+                longMAList = Utils.newList(listOf(2), 60, 1), // D 值平滑周期
+                upCrossDiffRateList = Utils.newList(listOf(0.0), 0.1, 0.01),
+                downCrossDiffRateList = Utils.newList(listOf(0.0), -0.1, -0.01),
+                argsFilter = { true },
+                kLineDataFilter = filter,
+            )
+        )
+        // argsList = argsList.filter { it.maType == MAType.SMA }
+        // argsList = argsList.filterNot { it.maType == MAType.OBV }
+        calculateBestArgs(symbol, argsList)
+    }
 
     private fun calculateSpecificArg(
         symbol: SymbolData,
@@ -341,6 +327,7 @@ class SinaFinance {
         val result = MACrossUtils.calculateMACross(
             symbol = symbol,
             kLineData = kLineData,
+            useCache = true,
         )
         val symbolForLogging = symbol.copy(
             yearlyPercentage = result.yearlyPercentage,
@@ -351,13 +338,36 @@ class SinaFinance {
         println("\n${getArgStr(symbolForLogging, result)} \n${result.getTotalDesc()} \n${result.totalCrossData.crossDataList.joinToString("\n")}")
     }
 
+    private fun printBasicInfo() {
+        repeat(3) { println() }
+        val backtestLog = runCatching { File("src/main/assets", "backtest.txt").readText() }.getOrNull()
+        // backtestLog?.split("---")?.filter { it.trim().split("\n").size <= 5 + 3 }?.forEach {
+        //     println(it)
+        // }
+        symbols.sortedByDescending { it.dailyPercentage }.forEach {
+            println(
+                "${it.code} ${it.desc}" +
+                    " yearlyPercentage:${Utils.getPercentageString(it.yearlyPercentage)}" +
+                    " dailyPercentage:${Utils.getPercentageString(it.dailyPercentage)}"
+            )
+        }
+
+        println("\n=== Group Size ===")
+        symbols.groupBy { it.d }.forEach { (d, symbols) -> println("d=$d ${symbols.size}") }
+        symbols.groupBy { it.maType }.forEach { (maType, symbols) -> println("$maType ${symbols.size}") }
+
+        Utils.printHeapUsage()
+    }
+
     @Test
     fun fetchJsonFile() {
+        var count = 0
         val scale = 240
         val d = listOf(1, 5)
-        symbols.subList(25, symbols.size).forEach { symbol ->
-            // (listOf(SymbolData("sh512980", "传媒ETF", 240, 5, 1, 15, 0, MAType.EMA, 0.120, 0.000, 0.083, 0.0009, -0.018))).forEach { symbol ->
+        symbols.forEach { symbol ->
             d.forEach { d ->
+                if (count++ > 0) Thread.sleep(Utils.httpDelay)
+
                 val api =
                     "http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${symbol.code}&scale=${scale * d}&ma=no&datalen=10000"
                 val json = Utils.httpGet(
@@ -376,7 +386,6 @@ class SinaFinance {
                     writer.flush()
                 }
                 println("${symbol.code} ${symbol.desc} ${d}")
-                Thread.sleep(Random.nextLong(300, 800))
             }
         }
     }

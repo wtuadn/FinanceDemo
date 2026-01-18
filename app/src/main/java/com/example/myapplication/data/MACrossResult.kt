@@ -22,7 +22,7 @@ data class MACrossResult(
         val insert = totalCrossData.groupKey.length + 1
         return "${totalStr.take(insert)}" +
             "平均次涨幅：${Utils.getPercentageString(countlyPercentage)} " +
-            "平均天涨幅：${Utils.getPercentageString(dailyPercentage)} " +
+            "平均天涨幅：${Utils.getPercentageString(dailyPercentage, 3)} " +
             "平均年涨幅：${Utils.getPercentageString(yearlyPercentage)} " +
             "${totalStr.substring(insert)} \n$maxDrawDownData"
     }

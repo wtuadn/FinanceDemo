@@ -1,6 +1,5 @@
 package com.example.myapplication.utils
 
-import android.os.Build
 import com.example.myapplication.data.AlignedMAData
 import com.example.myapplication.data.GroupedMACrossData
 import com.example.myapplication.data.KLineData
@@ -65,9 +64,9 @@ object MACrossUtils {
      */
     fun getTradeSignal(symbol: SymbolData, backtestLog: String? = null): List<TradeSignalData> {
         val maxArg = symbol.shortMA.coerceAtLeast(symbol.longMA).coerceAtLeast(symbol.extN)
-        val atLeastLen = maxArg * if (symbol.maType == MAType.OBV) 100 else if (symbol.maType == MAType.RSI) 5 else 3
-        var datalen = atLeastLen.coerceAtLeast(100)
-        if (!backtestLog.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val atLeastLen = maxArg * if (symbol.maType == MAType.OBV) 100 else if (symbol.maType == MAType.RSI) 10 else 5
+        var datalen = atLeastLen.coerceAtLeast(200)
+        if (!backtestLog.isNullOrBlank()) {
             runCatching {
                 // 正则表达式匹配 YYYY-MM-DD—— 格式的日期
                 val regex = "(\\d{4}-\\d{2}-\\d{2})——".toRegex()
@@ -99,7 +98,7 @@ object MACrossUtils {
             }
         } else {
             emptyList()
-        }
+        }.filterNot { it.date.split("-").first().toInt() < 2016 }
         if (kLineData.isEmpty()) {
             return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty"))
         }
@@ -117,10 +116,15 @@ object MACrossUtils {
     fun calculateMACross(
         symbol: SymbolData,
         kLineData: List<KLineData>,
+        useCache: Boolean = false,
     ): MACrossResult {
         val cacheKey = "${symbol.code}-${symbol.d}-${symbol.maType}-${symbol.shortMA}-${symbol.longMA}-${symbol.extN}"
-        val alignedMAData: List<AlignedMAData> = cachedAlignedMADataMap[cacheKey] ?: run {
-            when (symbol.maType) {
+        var alignedMAData: List<AlignedMAData>? = null
+        if (useCache) {
+            alignedMAData = cachedAlignedMADataMap[cacheKey]
+        }
+        if (alignedMAData.isNullOrEmpty()) {
+            alignedMAData = when (symbol.maType) {
                 MAType.SKDJ -> {
                     calculateSKDJData(kLineData, symbol.extN, symbol.shortMA, symbol.longMA)
                 }
@@ -134,8 +138,8 @@ object MACrossUtils {
                     Utils.calculateAlignedMAData(shortMADataList, longMADataList)
                 }
             }
+            cachedAlignedMADataMap[cacheKey] = alignedMAData
         }
-        cachedAlignedMADataMap[cacheKey] = alignedMAData
 
         // 3. 策略与回撤计算变量初始化
         val crossDataList = mutableListOf<MACrossData>()
