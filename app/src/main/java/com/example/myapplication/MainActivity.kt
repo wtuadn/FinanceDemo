@@ -549,7 +549,7 @@ data class SymbolItemState(
     fun getTradeTextColor(): Color = if (isTodaySignal) {
         when {
             isBuySignal -> Color.Red // 红色
-            isSellSignal -> Color.Green // 绿色
+            isSellSignal -> Color(0xFF0B9908) // 绿色
             else -> Color.Unspecified
         }
     } else if (isError()) {
