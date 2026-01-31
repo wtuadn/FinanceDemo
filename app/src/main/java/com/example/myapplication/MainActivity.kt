@@ -23,11 +23,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,58 +66,59 @@ private val orangeColor = Color(0xFFFFA500)
 
 class MainActivity : ComponentActivity() {
     private val symbols = listOf(
-        SymbolData("sh512880", "证券ETF", 240, 1, 17, 27, 47, MAType.RSI, 0.000, 0.000, 0.046, 0.00217, -0.053),
-        SymbolData("sz159326", "电网设备ETF", 240, 1, 5, 36, 46, MAType.MACD, 0.100, -0.080, 0.166, 0.00230, -0.031),
-        SymbolData("sh563360", "A500ETF", 240, 1, 60, 70, 0, MAType.SMA, 0.000, 0.000, 0.175, 0.00160, -0.012),
-        SymbolData("sh513500", "标普500ETF", 240, 1, 5, 55, 0, MAType.OBV, 0.140, -0.030, 0.126, 0.00080, -0.047),
-        SymbolData("sh510500", "中证500ETF", 240, 5, 28, 2, 3, MAType.SKDJ, 0.050, 0.000, 0.068, 0.00080, -0.064),
-        SymbolData("sh510050", "上证50ETF", 240, 1, 17, 27, 67, MAType.RSI, 0.000, 0.000, 0.072, 0.00096, -0.076),
-        SymbolData("sh510300", "沪深300ETF", 240, 1, 28, 33, 24, MAType.SKDJ, 0.080, -0.050, 0.074, 0.00057, -0.071),
-        SymbolData("sh512040", "价值100ETF", 240, 1, 15, 20, 0, MAType.OBV, 0.090, -0.030, 0.105, 0.00061, -0.077),
-        SymbolData("sz159883", "医疗器械ETF", 240, 1, 7, 17, 42, MAType.RSI, 0.000, 0.000, 0.088, 0.00482, -0.041),
-        SymbolData("sz159928", "消费ETF", 240, 5, 51, 56, 11, MAType.MACD, 0.000, 0.000, 0.146, 0.00136, -0.067),
-        SymbolData("sh512980", "传媒ETF", 240, 1, 33, 2, 3, MAType.SKDJ, 0.100, -0.010, 0.120, 0.00242, -0.048),
-        SymbolData("sz159869", "游戏ETF", 240, 5, 2, 18, 3, MAType.SKDJ, 0.000, 0.000, 0.246, 0.00229, -0.059),
-        SymbolData("sz159852", "软件ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.040, 0.205, 0.00276, -0.058),
-        SymbolData("sh516510", "云计算ETF", 240, 1, 53, 2, 4, MAType.SKDJ, 0.080, -0.030, 0.261, 0.00283, -0.066),
-        SymbolData("sz159998", "计算机ETF", 240, 1, 43, 2, 14, MAType.SKDJ, 0.100, -0.060, 0.168, 0.00176, -0.067),
-        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.EMA, 0.070, -0.040, 0.181, 0.00291, -0.038),
-        SymbolData("sh601398", "工商银行", 240, 1, 30, 40, 0, MAType.OBV, 0.190, -0.020, 0.076, 0.00063, -0.037),
-        SymbolData("sh600036", "招商银行", 240, 1, 10, 25, 0, MAType.SMA, 0.090, -0.060, 0.179, 0.00094, -0.062),
-        SymbolData("sh513120", "港股创新药ETF", 240, 1, 48, 3, 19, MAType.SKDJ, 0.010, -0.060, 0.317, 0.00218, -0.077),
-        SymbolData("sh515790", "光伏ETF", 240, 1, 30, 35, 0, MAType.SMA, 0.040, 0.000, 0.180, 0.00249, -0.028),
-        SymbolData("sh513550", "港股通50ETF", 240, 5, 21, 41, 16, MAType.MACD, 0.100, -0.030, 0.140, 0.00124, -0.049),
-        SymbolData("sh512710", "军工龙头ETF", 240, 1, 7, 17, 37, MAType.RSI, 0.000, 0.000, 0.067, 0.00579, -0.039),
-        SymbolData("sz159227", "航空航天ETF", 240, 1, 2, 3, 19, MAType.SKDJ, 0.100, -0.050, 0.211, 0.00397, -0.033),
-        SymbolData("sz159218", "卫星产业ETF", 240, 1, 3, 2, 3, MAType.SKDJ, 0.000, -0.070, 0.565, 0.00719, -0.016),
-        SymbolData("sz159813", "半导体ETF", 240, 5, 2, 3, 39, MAType.SKDJ, 0.000, -0.010, 0.147, 0.00116, -0.082),
+        SymbolData("sh588200", "科创芯片ETF", 240, 1, 9, 2, 46, MAType.SKDJ, 0.050, 0.000, 0.256, 0.00322, -0.088),
+        SymbolData("sh512880", "证券ETF", 240, 1, 8, 0, 380, MAType.CMF, 0.000, 0.000, 0.092, 0.01031, -0.016),
+        SymbolData("sz159326", "电网设备ETF", 240, 1, 3, 3, 37, MAType.SKDJ, 0.050, 0.000, 0.178, 0.00224, -0.013),
+        SymbolData("sh563360", "A500ETF", 240, 1, 3, 12, 4, MAType.SKDJ, 0.050, -0.050, 0.114, 0.00131, -0.022),
+        SymbolData("sh513500", "标普500ETF", 240, 1, 3, 24, 27, MAType.SKDJ, 0.000, -0.100, 0.147, 0.00067, -0.059),
+        SymbolData("sh510500", "中证500ETF", 240, 1, 6, 17, 35, MAType.RSI, 0.000, 0.000, 0.053, 0.00279, -0.075),
+        SymbolData("sh510050", "上证50ETF", 240, 5, 5, 18, 69, MAType.RSI, 0.000, 0.000, 0.066, 0.00108, -0.049),
+        SymbolData("sh510300", "沪深300ETF", 240, 1, 4, -500, 740, MAType.CMF, 0.000, 0.000, 0.077, 0.00094, -0.045),
+        SymbolData("sh512040", "价值100ETF", 240, 1, 7, 19, 55, MAType.RSI, 0.000, 0.000, 0.092, 0.00299, -0.050),
+        SymbolData("sz159883", "医疗器械ETF", 240, 1, 30, 38, 44, MAType.RSI, 0.000, 0.000, 0.119, 0.00241, -0.068),
+        SymbolData("sz159928", "消费ETF", 240, 5, 51, 56, 11, MAType.MACD, 0.000, 0.000, 0.145, 0.00135, -0.067),
+        SymbolData("sh512980", "传媒ETF", 240, 1, 9, 20, 30, MAType.RSI, 0.000, 0.000, 0.048, 0.00650, -0.041),
+        SymbolData("sz159869", "游戏ETF", 240, 1, 33, 36, 23, MAType.MACD, 0.100, -0.100, 0.221, 0.00288, -0.079),
+        SymbolData("sz159852", "软件ETF", 240, 1, 33, 3, 2, MAType.SKDJ, 0.100, 0.000, 0.149, 0.00358, -0.047),
+        SymbolData("sh516510", "云计算ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.100, -0.040, 0.193, 0.00359, -0.072),
+        SymbolData("sz159998", "计算机ETF", 240, 1, 38, 2, 3, MAType.SKDJ, 0.100, 0.000, 0.100, 0.00404, -0.027),
+        SymbolData("sh515400", "大数据ETF", 240, 1, 1, 5, 0, MAType.VWAP, 0.060, -0.020, 0.197, 0.00312, -0.050),
+        SymbolData("sh601398", "工商银行", 240, 1, 7, -340, 620, MAType.CMF, 0.000, 0.000, 0.075, 0.00059, -0.054),
+        SymbolData("sh600036", "招商银行", 240, 1, 13, 23, 55, MAType.RSI, 0.000, 0.000, 0.059, 0.00337, -0.067),
+        SymbolData("sh513120", "港股创新药ETF", 240, 1, 5, 25, 42, MAType.RSI, 0.000, 0.000, 0.127, 0.00375, -0.092),
+        SymbolData("sh515790", "光伏ETF", 240, 1, 20, 29, 42, MAType.RSI, 0.000, 0.000, 0.079, 0.00374, -0.077),
+        SymbolData("sh513550", "港股通50ETF", 240, 1, 27, -140, 80, MAType.CMF, 0.000, 0.000, 0.105, 0.00105, -0.050),
+        SymbolData("sh512710", "军工龙头ETF", 240, 1, 6, 15, 39, MAType.RSI, 0.000, 0.000, 0.073, 0.00588, -0.039),
+        SymbolData("sz159227", "航空航天ETF", 240, 1, 19, 34, 7, MAType.MACD, 0.050, 0.000, 0.252, 0.00398, -0.019),
+        SymbolData("sz159218", "卫星产业ETF", 240, 1, 2, 2, 4, MAType.SKDJ, 0.000, -0.100, 0.545, 0.00649, -0.019),
+        SymbolData("sz159813", "半导体ETF", 240, 1, 45, 60, 5, MAType.MACD, 0.100, 0.000, 0.125, 0.00251, -0.062),
         SymbolData("sz159713", "稀土ETF", 240, 1, 1, 5, 0, MAType.SMA, 0.080, -0.010, 0.139, 0.00416, -0.048),
-        SymbolData("sz159985", "豆粕ETF", 240, 5, 53, 2, 4, MAType.SKDJ, 0.000, -0.040, 0.142, 0.00070, -0.037),
-        SymbolData("sh561330", "矿业ETF", 240, 1, 30, 200, 0, MAType.OBV, 0.000, -0.190, 0.371, 0.00404, -0.016),
-        SymbolData("sh513400", "道琼斯ETF", 240, 1, 13, 8, 39, MAType.SKDJ, 0.050, -0.060, 0.144, 0.00117, -0.013),
-        SymbolData("sh510230", "金融ETF", 240, 1, 35, 150, 0, MAType.OBV, 0.100, -0.020, 0.075, 0.00116, -0.098),
-        SymbolData("sh516860", "金融科技ETF", 240, 1, 53, 2, 4, MAType.SKDJ, 0.080, 0.000, 0.161, 0.00435, -0.042),
-        SymbolData("sh512010", "医药ETF", 240, 5, 26, 51, 5, MAType.MACD, 0.030, -0.060, 0.126, 0.00090, -0.047),
-        SymbolData("sz159766", "旅游ETF", 240, 5, 16, 36, 11, MAType.MACD, 0.040, -0.100, 0.116, 0.00152, -0.057),
-        SymbolData("sh588790", "科创AIETF", 240, 1, 2, 2, 54, MAType.SKDJ, 0.000, -0.040, 0.351, 0.00339, -0.061),
+        SymbolData("sz159985", "豆粕ETF", 240, 5, 14, 2, 2, MAType.SKDJ, 0.000, -0.100, 0.162, 0.00087, -0.035),
+        SymbolData("sh561330", "矿业ETF", 240, 1, 9, 26, 45, MAType.RSI, 0.000, 0.000, 0.099, 0.00590, -0.024),
+        SymbolData("sh513400", "道琼斯ETF", 240, 1, 11, 37, 45, MAType.RSI, 0.000, 0.000, 0.070, 0.00333, -0.045),
+        SymbolData("sh510230", "金融ETF", 240, 5, 5, 21, 61, MAType.RSI, 0.000, 0.000, 0.084, 0.00134, -0.049),
+        SymbolData("sh516860", "金融科技ETF", 240, 1, 5, -40, 460, MAType.CMF, 0.000, 0.000, 0.199, 0.00646, -0.028),
+        SymbolData("sh512010", "医药ETF", 240, 5, 21, 42, 5, MAType.MACD, 0.100, -0.100, 0.129, 0.00088, -0.035),
+        SymbolData("sz159766", "旅游ETF", 240, 5, 9, 30, 29, MAType.MACD, 0.050, 0.000, 0.111, 0.00191, -0.038),
+        SymbolData("sh588790", "科创AIETF", 240, 1, 7, 36, 5, MAType.MACD, 0.000, 0.000, 0.325, 0.00482, -0.062),
         SymbolData("sh513310", "中韩半导体ETF", 240, 1, 1, 20, 0, MAType.SMA, 0.040, -0.020, 0.252, 0.00205, -0.034),
-        SymbolData("sh588220", "科创100ETF基金", 240, 1, 13, 3, 49, MAType.SKDJ, 0.090, -0.080, 0.210, 0.00242, -0.052),
-        SymbolData("sh588000", "科创50ETF", 240, 1, 60, 80, 0, MAType.OBV, 0.170, 0.000, 0.162, 0.00149, -0.038),
-        SymbolData("sz159755", "电池ETF", 240, 1, 46, 56, 5, MAType.MACD, 0.090, 0.000, 0.156, 0.00267, -0.097),
-        SymbolData("sh513090", "香港证券ETF", 240, 1, 48, 2, 3, MAType.SKDJ, 0.090, -0.040, 0.201, 0.00256, -0.062),
-        SymbolData("sh562500", "机器人ETF", 240, 1, 48, 3, 9, MAType.SKDJ, 0.100, 0.000, 0.187, 0.00307, -0.041),
-        SymbolData("sz159915", "易方达创业板ETF", 240, 5, 3, 2, 44, MAType.SKDJ, 0.010, 0.000, 0.121, 0.00084, -0.082),
-        SymbolData("sh515050", "5G通信ETF", 240, 1, 18, 8, 19, MAType.SKDJ, 0.010, -0.100, 0.249, 0.00149, -0.112),
-        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 42, 57, 62, MAType.RSI, 0.000, 0.000, 0.144, 0.00183, 0.000),
-        SymbolData("sh512890", "红利低波ETF", 240, 5, 12, 47, 72, MAType.RSI, 0.000, 0.000, 0.152, 0.00089, -0.069),
-        SymbolData("sh515100", "红利低波100ETF", 240, 1, 3, 8, 3, MAType.SKDJ, 0.070, -0.100, 0.109, 0.00067, -0.093),
-        SymbolData("sh515450", "红利低波50ETF", 240, 1, 8, 2, 59, MAType.SKDJ, 0.090, -0.090, 0.102, 0.00063, -0.061),
-        SymbolData("sh513820", "港股红利ETF", 240, 1, 2, 2, 54, MAType.SKDJ, 0.100, -0.070, 0.129, 0.00139, -0.027),
-        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 43, 2, 4, MAType.SKDJ, 0.030, -0.040, 0.150, 0.00164, -0.025),
-        SymbolData("sh513130", "恒生科技ETF", 240, 1, 13, 23, 3, MAType.SKDJ, 0.060, 0.000, 0.139, 0.00166, -0.048),
-        SymbolData("sz159892", "恒生医药ETF", 240, 5, 43, 2, 3, MAType.SKDJ, 0.060, 0.000, 0.146, 0.00205, -0.038),
-        SymbolData("sz159941", "纳指ETF广发", 240, 1, 58, 8, 9, MAType.SKDJ, 0.000, -0.030, 0.189, 0.00088, -0.059),
-        SymbolData("sh518880", "黄金ETF", 240, 1, 22, 62, 77, MAType.RSI, 0.000, 0.000, 0.143, 0.00046, -0.127),
+        SymbolData("sh588220", "科创100ETF基金", 240, 1, 6, 17, 36, MAType.RSI, 0.000, 0.000, 0.075, 0.00657, -0.078),
+        SymbolData("sh588000", "科创50ETF", 240, 1, 13, 22, 51, MAType.RSI, 0.000, 0.000, 0.086, 0.00585, -0.034),
+        SymbolData("sz159755", "电池ETF", 240, 1, 31, 34, 7, MAType.MACD, 0.050, 0.000, 0.129, 0.00289, -0.101),
+        SymbolData("sh513090", "香港证券ETF", 240, 1, 22, 0, 80, MAType.CMF, 0.000, 0.000, 0.139, 0.00579, -0.049),
+        SymbolData("sh562500", "机器人ETF", 240, 1, 35, 4, 5, MAType.SKDJ, 0.100, 0.000, 0.168, 0.00308, -0.030),
+        SymbolData("sz159915", "易方达创业板ETF", 240, 1, 14, 30, 38, MAType.RSI, 0.000, 0.000, 0.079, 0.00327, -0.078),
+        SymbolData("sh515050", "5G通信ETF", 240, 1, 29, 5, 22, MAType.SKDJ, 0.000, -0.100, 0.275, 0.00158, -0.103),
+        SymbolData("sz159201", "华夏国证自由现金流ETF", 240, 1, 2, 2, 6, MAType.SKDJ, 0.000, -0.100, 0.132, 0.00135, -0.009),
+        SymbolData("sh512890", "红利低波ETF", 240, 1, 47, 47, 63, MAType.RSI, 0.000, 0.000, 0.170, 0.00092, -0.076),
+        SymbolData("sh515100", "红利低波100ETF", 240, 1, 7, 20, 76, MAType.RSI, 0.000, 0.000, 0.075, 0.00113, -0.047),
+        SymbolData("sh515450", "红利低波50ETF", 240, 5, 28, 48, 54, MAType.RSI, 0.000, 0.000, 0.096, 0.00134, -0.062),
+        SymbolData("sh513820", "港股红利ETF", 240, 1, 2, 2, 50, MAType.SKDJ, 0.100, -0.050, 0.109, 0.00134, -0.041),
+        SymbolData("sz159545", "恒生红利低波ETF", 240, 1, 2, 16, 6, MAType.SKDJ, 0.000, -0.100, 0.170, 0.00144, -0.022),
+        SymbolData("sh513130", "恒生科技ETF", 240, 5, 41, 48, 33, MAType.MACD, 0.000, 0.000, 0.188, 0.00229, -0.034),
+        SymbolData("sz159892", "恒生医药ETF", 240, 5, 5, 20, 30, MAType.RSI, 0.000, 0.000, 0.075, 0.00301, -0.091),
+        SymbolData("sz159941", "纳指ETF广发", 240, 1, 8, 25, 49, MAType.RSI, 0.000, 0.000, 0.098, 0.00369, -0.090),
+        SymbolData("sh518880", "黄金ETF", 240, 1, 5, 16, 72, MAType.RSI, 0.000, 0.000, 0.061, 0.00131, -0.034),
     )
     // .subList(0, 10)
 
@@ -124,9 +130,25 @@ class MainActivity : ComponentActivity() {
             MyApplicationTheme {
                 val coroutineScope = rememberCoroutineScope()
 
-                // 使用 SymbolItemState 存储状态
+                // 存储所有 symbol 状态的完整列表
                 var symbolItemStates by remember {
                     mutableStateOf(symbols.map { SymbolItemState(it) })
+                }
+                // 搜索框的文本状态
+                var searchQuery by remember { mutableStateOf("") }
+
+                // 根据搜索条件过滤并排序后的列表，用于UI展示
+                val filteredSymbolItemStates = remember(searchQuery, symbolItemStates) {
+                    val filteredList = if (searchQuery.isBlank()) {
+                        symbolItemStates
+                    } else {
+                        symbolItemStates.filter {
+                            it.symbolData.code.contains(searchQuery, ignoreCase = true) ||
+                                it.symbolData.desc.contains(searchQuery, ignoreCase = true)
+                        }
+                    }
+                    // 将排序逻辑集中到这里，每次状态变化后重新排序
+                    filteredList.sortedByDescending { it.getSortPriority() }
                 }
 
                 var loadingD by remember { mutableStateOf<Int?>(null) } // null:不在加载, 1:加载d=1, 5:加载d=5, 0:加载全部
@@ -142,13 +164,34 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
+                        // 搜索框
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = { Text("按 code 或 desc 搜索") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            trailingIcon = {
+                                // 当搜索框不为空时，显示清除按钮
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "清除搜索内容"
+                                        )
+                                    }
+                                }
+                            }
+                        )
+
                         // 列表区域
                         LazyColumn(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
                         ) {
-                            itemsIndexed(symbolItemStates) { index, item ->
+                            itemsIndexed(filteredSymbolItemStates) { index, item ->
                                 SymbolRow(
                                     index = index,
                                     itemState = item,
@@ -157,9 +200,9 @@ class MainActivity : ComponentActivity() {
                                         .padding(vertical = 4.dp),
                                     onClick = { selectedSymbol = item },
                                     onItemUpdate = { updatedItem ->
-                                        // 更新列表中的单个项目状态
-                                        symbolItemStates = symbolItemStates.toMutableList().apply {
-                                            this[index] = updatedItem
+                                        // 更新列表中单个项目的状态
+                                        symbolItemStates = symbolItemStates.map {
+                                            if (it.symbolData.code == updatedItem.symbolData.code) updatedItem else it
                                         }
                                     }
                                 )
@@ -178,18 +221,21 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     coroutineScope.launch {
                                         loadingD = 1
+                                        // 只获取过滤后列表中的 SymbolData
+                                        val listToRefresh = filteredSymbolItemStates
+                                            .map { it.symbolData }
+                                            .filter { it.d == 1 }
+
                                         fetchTradeSignalsSequentially(
-                                            initialList = symbols.filter { it.d == 1 },
+                                            initialList = listToRefresh,
                                             onUpdate = { updatedList ->
+                                                // 将更新后的状态合并回主列表
                                                 val updatedMap = updatedList.associateBy { it.symbolData.code }
                                                 symbolItemStates = symbolItemStates.map { existingItem ->
                                                     updatedMap[existingItem.symbolData.code] ?: existingItem
-                                                }
+                                                }.sortedByDescending { it.getSortPriority() }
                                             },
-                                            onComplete = {
-                                                loadingD = null
-                                                symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
-                                            }
+                                            onComplete = { loadingD = null }
                                         )
                                     }
                                 },
@@ -214,18 +260,21 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     coroutineScope.launch {
                                         loadingD = 5
+                                        // 只获取过滤后列表中的 SymbolData
+                                        val listToRefresh = filteredSymbolItemStates
+                                            .map { it.symbolData }
+                                            .filter { it.d == 5 }
+
                                         fetchTradeSignalsSequentially(
-                                            initialList = symbols.filter { it.d == 5 },
+                                            initialList = listToRefresh,
                                             onUpdate = { updatedList ->
+                                                // 将更新后的状态合并回主列表
                                                 val updatedMap = updatedList.associateBy { it.symbolData.code }
                                                 symbolItemStates = symbolItemStates.map { existingItem ->
                                                     updatedMap[existingItem.symbolData.code] ?: existingItem
-                                                }
+                                                }.sortedByDescending { it.getSortPriority() }
                                             },
-                                            onComplete = {
-                                                loadingD = null
-                                                symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
-                                            }
+                                            onComplete = { loadingD = null }
                                         )
                                     }
                                 },
@@ -250,18 +299,19 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     coroutineScope.launch {
                                         loadingD = 0 // 使用 0 代表全部
+                                        // 只获取过滤后列表中的 SymbolData
+                                        val listToRefresh = filteredSymbolItemStates.map { it.symbolData }
+
                                         fetchTradeSignalsSequentially(
-                                            initialList = symbols, // 传递整个列表
+                                            initialList = listToRefresh,
                                             onUpdate = { updatedList ->
+                                                // 将更新后的状态合并回主列表
                                                 val updatedMap = updatedList.associateBy { it.symbolData.code }
                                                 symbolItemStates = symbolItemStates.map { existingItem ->
                                                     updatedMap[existingItem.symbolData.code] ?: existingItem
-                                                }
+                                                }.sortedByDescending { it.getSortPriority() }
                                             },
-                                            onComplete = {
-                                                loadingD = null
-                                                symbolItemStates = symbolItemStates.sortedByDescending { it.getSortPriority() }
-                                            }
+                                            onComplete = { loadingD = null }
                                         )
                                     }
                                 },
@@ -309,7 +359,7 @@ class MainActivity : ComponentActivity() {
                 // 1. 设置当前 Item 为加载中
                 mutableList[index] = mutableList[index].copy(isLoading = true, isCompleted = false)
                 withContext(Dispatchers.Main) {
-                    // 必须切回主线程更新 UI 状态和排序
+                    // 必须切回主线程更新 UI 状态
                     onUpdate(mutableList.toList())
                 }
 

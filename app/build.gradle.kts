@@ -43,7 +43,7 @@ android {
             // 使用 all 访问所有 Test 任务的配置
             all { test ->
                 // 设置 JVM 参数，包括最大堆内存 (-Xmx)
-                test.jvmArgs("-Xmx20g", // 设置最大堆内存为 2GB
+                test.jvmArgs("-Xmx45g", // 设置最大堆内存为 2GB
                 )
             }
         }

@@ -23,12 +23,25 @@ import kotlin.math.min
 object MACrossUtils {
 
     enum class MAType {
+        SKDJ,
+        MACD,
         SMA,
         EMA,
         RSI,
         OBV,
-        SKDJ,
-        MACD,
+        VPT,
+        CMF,
+        VWAP;
+
+        /**
+         * 判断该技术指标是否基于成交量计算
+         */
+        fun isVolumeBased(): Boolean {
+            return when (this) {
+                OBV, VPT, CMF, VWAP -> true
+                else -> false
+            }
+        }
     }
 
     // --- Private Data Class for Drawdown State ---
@@ -85,6 +98,18 @@ object MACrossUtils {
             }
         }
 
+        if (symbol.maType.isVolumeBased() && symbol.d == 5) {
+            val history = Utils.getSinaKLineData(symbol = symbol.copy(scale = 240, d = 1), datalen = datalen)
+            if (history.any { it.volume <= 0 }) {
+                return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.volume<=0"))
+            }
+            Thread.sleep(Utils.httpDelay)
+            val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5, d = 1), datalen = 1)
+            if (lastest.any { it.volume <= 0 }) {
+                return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.volume<=0"))
+            }
+            Thread.sleep(Utils.httpDelay)
+        }
         val history = Utils.getSinaKLineData(symbol = symbol.copy(scale = 240), datalen = datalen)
         Thread.sleep(Utils.httpDelay)
         val lastest = Utils.getSinaKLineData(symbol.copy(scale = 5), datalen = 1)
@@ -102,13 +127,20 @@ object MACrossUtils {
         if (kLineData.isEmpty()) {
             return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.isEmpty"))
         }
-        if (symbol.maType == MAType.OBV && kLineData.find { it.volume <= 0 } != null) {
+        if (symbol.maType.isVolumeBased() && kLineData.any { it.volume <= 0 }) {
             return listOf(TradeSignalData(TradeSignal.HOLD, "${Utils.timestampToDate(System.currentTimeMillis() / 1000)}-kLineData.volume<=0"))
         }
         return calculateMACross(symbol, kLineData).tradeSignalDataList
     }
 
-    private val cachedAlignedMADataMap = mutableMapOf<String, List<AlignedMAData>>()
+    private fun getCacheKey(symbol: SymbolData): String {
+        val baseKey = "${symbol.code}-${symbol.d}-${symbol.maType}"
+        return when (symbol.maType) {
+            MAType.RSI, MAType.CMF -> "$baseKey-${symbol.shortMA}"
+            MAType.SMA, MAType.EMA, MAType.OBV, MAType.VPT, MAType.VWAP -> "$baseKey-${symbol.shortMA}-${symbol.longMA}"
+            MAType.SKDJ, MAType.MACD -> "$baseKey-${symbol.shortMA}-${symbol.longMA}-${symbol.extN}"
+        }
+    }
 
     /**
      * 计算均线交叉策略，包含最大回撤和修复时间计算
@@ -116,29 +148,18 @@ object MACrossUtils {
     fun calculateMACross(
         symbol: SymbolData,
         kLineData: List<KLineData>,
-        useCache: Boolean = false,
+        cachedAlignedMADataMap: MutableMap<String, List<AlignedMAData>>? = null,
     ): MACrossResult {
-        val cacheKey = "${symbol.code}-${symbol.d}-${symbol.maType}-${symbol.shortMA}-${symbol.longMA}-${symbol.extN}"
+        val cacheKey = getCacheKey(symbol)
         var alignedMAData: List<AlignedMAData>? = null
-        if (useCache) {
+        if (!cachedAlignedMADataMap.isNullOrEmpty()) {
             alignedMAData = cachedAlignedMADataMap[cacheKey]
         }
         if (alignedMAData.isNullOrEmpty()) {
-            alignedMAData = when (symbol.maType) {
-                MAType.SKDJ -> {
-                    calculateSKDJData(kLineData, symbol.extN, symbol.shortMA, symbol.longMA)
-                }
-                MAType.MACD -> {
-                    calculateMACDData(kLineData, symbol.longMA, symbol.shortMA, symbol.extN)
-                }
-                else -> {
-                    // 1. 计算长短均线
-                    val (shortMADataList, longMADataList) = calculateMADataLists(kLineData, symbol)
-                    // 2. 对齐数据（确保日期匹配，过滤掉无效的 null 值）
-                    Utils.calculateAlignedMAData(shortMADataList, longMADataList)
-                }
+            alignedMAData = calculateMADataLists(symbol, kLineData)
+            if (cachedAlignedMADataMap != null) {
+                cachedAlignedMADataMap[cacheKey] = alignedMAData
             }
-            cachedAlignedMADataMap[cacheKey] = alignedMAData
         }
 
         // 3. 策略与回撤计算变量初始化
@@ -215,37 +236,46 @@ object MACrossUtils {
      * Helper to compute short and long MA data lists based on MA_TYPE.
      */
     private fun calculateMADataLists(
-        kLineData: List<KLineData>,
         symbol: SymbolData,
-    ): Pair<List<MAData>, List<MAData>> {
+        kLineData: List<KLineData>,
+    ): List<AlignedMAData> {
         return when (symbol.maType) {
-            MAType.SMA -> {
-                Pair(
-                    calculateMAData(kLineData, symbol.shortMA),
-                    calculateMAData(kLineData, symbol.longMA)
-                )
+            MAType.SKDJ -> calculateSKDJData(kLineData, symbol.extN, symbol.shortMA, symbol.longMA)
+            MAType.MACD -> calculateMACDData(kLineData, symbol.longMA, symbol.shortMA, symbol.extN)
+            else -> {
+                val (shortMAData, longMAData) = when (symbol.maType) {
+                    MAType.SMA -> Pair(
+                        calculateMAData(kLineData, symbol.shortMA),
+                        calculateMAData(kLineData, symbol.longMA)
+                    )
+                    MAType.EMA -> Pair(
+                        calculateEMAData(kLineData, symbol.shortMA),
+                        calculateEMAData(kLineData, symbol.longMA)
+                    )
+                    MAType.RSI -> {
+                        val rsi = calculateRSI(kLineData, symbol.shortMA)
+                        Pair(rsi, rsi)
+                    }
+                    MAType.OBV -> Pair(
+                        calculateOBVMAData(kLineData, symbol.shortMA),
+                        calculateOBVMAData(kLineData, symbol.longMA)
+                    )
+                    MAType.VPT -> Pair(
+                        calculateVPTMAData(kLineData, symbol.shortMA),
+                        calculateVPTMAData(kLineData, symbol.longMA)
+                    )
+                    MAType.VWAP -> Pair(
+                        calculateVWAPData(kLineData, symbol.shortMA),
+                        calculateVWAPData(kLineData, symbol.longMA)
+                    )
+                    MAType.CMF -> {
+                        val cmf = calculateCMF(kLineData, symbol.shortMA)
+                        Pair(cmf, cmf)
+                    }
+                    else -> throw IllegalArgumentException("Invalid MA type: ${symbol.maType}")
+                }
+                Utils.calculateAlignedMAData(shortMAData, longMAData)
             }
-
-            MAType.EMA -> {
-                Pair(
-                    calculateEMAData(kLineData, symbol.shortMA),
-                    calculateEMAData(kLineData, symbol.longMA)
-                )
-            }
-
-            MAType.RSI -> {
-                val rsi = calculateRSI(kLineData, symbol.shortMA)
-                Pair(rsi, rsi)
-            }
-
-            MAType.OBV -> {
-                Pair(
-                    calculateOBVMAData(kLineData, symbol.shortMA),
-                    calculateOBVMAData(kLineData, symbol.longMA)
-                )
-            }
-
-            else -> throw IllegalArgumentException("Invalid MA type: ${symbol.maType}")
         }
     }
 
@@ -375,6 +405,7 @@ object MACrossUtils {
     ): Pair<AlignedMAData?, AlignedMAData?> {
         return when (symbol.maType) {
             MAType.RSI -> handleRSIValueTradingSignal(buyData, today, symbol, crossDataList)
+            MAType.CMF -> handleCMFValueTradingSignal(buyData, today, symbol, crossDataList) // 新增 CMF 信号处理
             else -> handleCrossTradingSignal(crossData, buyData, today, yesterday, symbol, crossDataList)
         }
     }
@@ -398,10 +429,37 @@ object MACrossUtils {
             newBuyData = today
         } else if (isHolding && shouldSell) {
             // Currently holding, but the sell signal is active. Execute sell.
-            crossDataList.add(MACrossData(newBuyData, today))
+            crossDataList.add(MACrossData(newBuyData!!, today))
             newBuyData = null
         }
         // In all other cases, maintain the current position (or lack thereof).
+        return null to newBuyData
+    }
+
+    private fun handleCMFValueTradingSignal(
+        buyData: AlignedMAData?,
+        today: AlignedMAData,
+        symbol: SymbolData,
+        crossDataList: MutableList<MACrossData>,
+    ): Pair<AlignedMAData?, AlignedMAData?> {
+        var newBuyData = buyData
+        val isHolding = newBuyData != null
+
+        // CMF 策略:
+        // 买入条件: CMF > extN (例如, CMF > 0.05，资金流入)
+        val shouldBuy = today.shortMAValue > (symbol.extN / 1000.0)
+        // 卖出条件: CMF < longMA (例如, CMF < -0.05，资金流出)
+        val shouldSell = today.shortMAValue < (symbol.longMA / 1000.0)
+
+        if (!isHolding && shouldBuy) {
+            // 当前未持仓，但买入信号触发，执行买入
+            newBuyData = today
+        } else if (isHolding && shouldSell) {
+            // 当前持仓，但卖出信号触发，执行卖出
+            crossDataList.add(MACrossData(newBuyData, today))
+            newBuyData = null
+        }
+        // 其他情况，保持当前持仓状态不变
         return null to newBuyData
     }
 
@@ -590,6 +648,62 @@ object MACrossUtils {
         return result
     }
 
+    /**
+     * 根据 KLineData 列表计算蔡金资金流 (Chaikin Money Flow, CMF)。
+     *
+     * @param dataList 原始 KLineData 列表（必须按日期升序排列）。
+     * @param period CMF 的计算周期 N (例如：20, 21)。
+     * @return 包含日期和对应 CMF 值的 MAData 列表。
+     */
+    fun calculateCMF(dataList: List<KLineData>, period: Int): List<MAData> {
+        if (dataList.size < period) {
+            return dataList.map { MAData(it, null) }
+        }
+
+        val result = mutableListOf<MAData>()
+        // CMF 无法计算的初始阶段，添加 null 值
+        for (i in 0 until period - 1) {
+            result.add(MAData(dataList[i], null))
+        }
+
+        // 预先计算每日的 Money Flow Volume
+        val moneyFlowVolumes = dataList.map {
+            val high = it.highPrice
+            val low = it.lowPrice
+            val close = it.closePrice
+            val volume = it.volume
+
+            if (high == low) {
+                0.0 // 避免除以零
+            } else {
+                val moneyFlowMultiplier = ((close - low) - (high - close)) / (high - low)
+                moneyFlowMultiplier * volume
+            }
+        }
+
+        // 使用滑动窗口计算 CMF
+        for (i in period - 1 until dataList.size) {
+            val startIndex = i - period + 1
+            // 提取窗口内的数据
+            val windowMFV = moneyFlowVolumes.subList(startIndex, i + 1)
+            val windowVolume = dataList.subList(startIndex, i + 1).map { it.volume.toDouble() }
+
+            // 计算窗口内 MFV 和 Volume 的总和
+            val sumMFV = windowMFV.sum()
+            val sumVolume = windowVolume.sum()
+
+            val cmf = if (sumVolume == 0.0) {
+                0.0 // 如果周期内总成交量为0，CMF为0
+            } else {
+                sumMFV / sumVolume
+            }
+
+            result.add(MAData(dataList[i], cmf.roundTo3Decimals()))
+        }
+
+        return result
+    }
+
     fun calculateOBVMAData(dataList: List<KLineData>, period: Int): List<MAData> {
         val obvList = mutableListOf<MAData>()
 
@@ -627,6 +741,112 @@ object MACrossUtils {
         }
 
         return calculateMAValue(obvList, period)
+    }
+
+    /**
+     * 计算成交量价格趋势 (Volume Price Trend, VPT) 指标的原始值
+     *
+     * VPT = Sum [ Volume * (Close_t - Close_{t-1}) / Close_{t-1} ]
+     *
+     * @param dataList 原始 K 线数据列表（必须按日期升序排列）。
+     * @return 包含日期和对应 VPT 值的 MAData 列表。
+     */
+    private fun calculateVPTIndicator(dataList: List<KLineData>): List<MAData> {
+        if (dataList.isEmpty()) return emptyList()
+
+        val vptList = mutableListOf<MAData>()
+        var currentVPT = 0.0
+
+        // 第一个数据点没有前一日收盘价，VPT设为0
+        vptList.add(MAData(dataList[0], 0.0))
+
+        for (i in 1 until dataList.size) {
+            val yesterdayClose = dataList[i - 1].closePrice
+            val todayClose = dataList[i].closePrice
+            val todayVolume = dataList[i].volume
+
+            if (yesterdayClose > 0.0 && todayVolume > 0) {
+                // 计算当日贡献值
+                // Contribution = Volume * (Close_t - Close_{t-1}) / Close_{t-1}
+                val ratio = (todayClose - yesterdayClose) / yesterdayClose
+                val vptContribution = todayVolume.toDouble() * ratio
+
+                currentVPT += vptContribution
+            }
+
+            // 四舍五入，保留3位小数
+            val roundedVPT = currentVPT.roundTo3Decimals()
+            vptList.add(MAData(dataList[i], roundedVPT))
+        }
+        return vptList
+    }
+
+    /**
+     * 根据 KLineData 列表计算 VPT 移动平均线 (VPT-MA)。
+     *
+     * @param dataList 原始 K 线数据列表（必须按日期升序排列）。
+     * @param period 均线的计算周期 N。
+     * @return 包含日期和对应 VPT-MA 值的 MAData 列表。
+     */
+    private fun calculateVPTMAData(dataList: List<KLineData>, period: Int): List<MAData> {
+        val vptIndicatorList = calculateVPTIndicator(dataList)
+        // VPT-MA 使用通用的 MA 计算逻辑进行平滑
+        return calculateMAValue(vptIndicatorList, period)
+    }
+
+    /**
+     * 根据 KLineData 列表高效计算成交量加权平均价 (Volume Weighted Average Price, VWAP)。
+     * 此方法实现为N日移动VWAP，并采用滑动窗口以优化性能。
+     *
+     * @param dataList 原始 KLineData 列表（必须按日期升序排列）。
+     * @param period VWAP 的计算周期 N。
+     * @return 包含日期和对应 VWAP 值的 MAData 列表。
+     */
+    fun calculateVWAPData(dataList: List<KLineData>, period: Int): List<MAData> {
+        if (dataList.size < period) {
+            return dataList.map { MAData(it, null) }
+        }
+
+        val result = mutableListOf<MAData>()
+        // 初始阶段 (前 period - 1 天) VWAP 无法计算
+        for (i in 0 until period - 1) {
+            result.add(MAData(dataList[i], null))
+        }
+
+        // 预计算典型价格 * 成交量 和 成交量，以备滑动窗口使用
+        val typicalPriceVolume = dataList.map {
+            ((it.highPrice + it.lowPrice + it.closePrice) / 3.0) * it.volume
+        }
+        val volumes = dataList.map { it.volume.toDouble() }
+
+        // 计算第一个窗口的总和
+        var sumPriceVolume = typicalPriceVolume.subList(0, period).sum()
+        var sumVolume = volumes.subList(0, period).sum()
+
+        // 添加第一个有效的 VWAP 值
+        val firstVwap = if (sumVolume == 0.0) {
+            dataList[period - 1].closePrice // 备用值
+        } else {
+            sumPriceVolume / sumVolume
+        }
+        result.add(MAData(dataList[period - 1], firstVwap.roundTo3Decimals()))
+
+        // 使用滑动窗口高效计算后续的 VWAP
+        for (i in period until dataList.size) {
+            // 加上新元素，减去最旧的元素，实现窗口滑动
+            sumPriceVolume += typicalPriceVolume[i] - typicalPriceVolume[i - period]
+            sumVolume += volumes[i] - volumes[i - period]
+
+            val vwap = if (sumVolume == 0.0) {
+                dataList[i].closePrice // 备用值
+            } else {
+                sumPriceVolume / sumVolume
+            }
+
+            result.add(MAData(dataList[i], vwap.roundTo3Decimals()))
+        }
+
+        return result
     }
 
     /**

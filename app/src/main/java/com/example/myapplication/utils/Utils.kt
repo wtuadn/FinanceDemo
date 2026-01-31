@@ -54,7 +54,14 @@ object Utils {
     }
 
     fun newList(start: List<Int>, end: Int, step: Int): List<Int> {
-        return start + (start.last() + step..end).step(5).toList()
+        return start + generateSequence(start.last() + step) { it + step }
+            .takeWhile {
+                if (step > 0) {
+                    it <= end
+                } else {
+                    it >= end
+                }
+            }.toList()
     }
 
     fun printHeapUsage() {
@@ -303,5 +310,5 @@ object Utils {
         }
     }
 
-    val httpDelay: Long get() = Random.nextLong(900, 1000)
+    val httpDelay: Long get() = Random.nextLong(1000, 1100)
 }
